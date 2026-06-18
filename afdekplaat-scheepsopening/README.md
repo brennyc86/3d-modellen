@@ -10,9 +10,16 @@ bovenaan `afdekplaat.py` en zijn met één getal aan te passen.
 
 De opening is **235 mm breed × 245 mm hoog**, met **flink afgeronde hoeken (~10 cm
 radius)** in een schot van **±10 mm dik**. Omdat het gat met de hand gezaagd is, zit
-er overal **1 cm speling per zijde** op de insteek (`MARGE`). De flens (4 mm overlap)
-dekt het gat nog steeds af en de richel grijpt 12 mm achter het schot — **centreer 'm
-wel** bij montage, want de flens overlapt 4 mm en de insteek heeft 1 cm speling.
+er overal **1 cm speling per zijde** op de insteek (`MARGE`).
+
+**Maten op een rij:**
+| | maat | t.o.v. gat |
+|---|---|---|
+| Gat | 235 × 245 | — |
+| Flens (voorkant) | **251 × 261** | +1,6 cm (8 mm overlap/zijde) |
+| Insteekrand (opstaande rand) | **215 × 225** | −2 cm (1 cm marge/zijde) |
+
+De flens (8 mm overlap) dekt het gat ruim af en de richel grijpt 12 mm achter het schot.
 
 > **Bovendeel** — de richel aan de achterkant zit **alleen op het vlakke bovenstuk**
 > (`HAAK_BOVEN_X`), niet in de bocht, zodat je 'm makkelijk kunt inzetten.
@@ -33,7 +40,7 @@ Verder:
   klemt met een **12 mm breed vlak** tegen de achterkant van het schot, met **0,3 mm
   voorspanning** zodat hij strak trekt. Zet `WAND` op je **gemeten** schotdikte voor
   de beste klem.
-- **Buitenflens** grijpt rondom **4 mm** over de rand → dekt de handgezaagde kant af (kat-dicht). Compact gehouden zodat het geheel **±243 mm** breed blijft en op een Bambu A1 (256 mm) past met marge. Meer overlap willen om een grovere zaagrand te verbergen? Verhoog `FLENS_OVER` (let op de bedmaat).
+- **Buitenflens** grijpt rondom **8 mm** over de rand → dekt de handgezaagde kant af (kat-dicht). Buitenmaat **251 mm**, past op een Bambu A1 (256 mm). Meer/minder overlap? Pas `FLENS_OVER` aan (let op de bedmaat).
 - **Kabeldoorvoer** links-onder: gat van **70 × 20 mm**, met een **open toegangssleuf (16 mm) naar de onderrand**. Zo kun je de plaat **over reeds aangesloten kabels** leggen (kabels hoeven niet losgekoppeld) — laat de plaat zakken en de kabels glijden via de sleuf in het gat. Stem `SLEUF_B` af op je kabelbundel; de resterende ruimte kun je na montage opvullen (tule/grommet) om het kat-dicht te houden.
 - Zijkanten hebben **geen** haak (alleen buitenflens) — precies zoals gevraagd.
 
@@ -56,7 +63,7 @@ Verder:
 
 ## Printen
 
-> ✅ **Bedmaat:** de delen zijn ±**243 mm** breed × **160 mm** hoog → past ruim op een
+> ✅ **Bedmaat:** de delen zijn ±**251 mm** breed × **160 mm** hoog → past op een
 > **Bambu Lab A1 (256 × 256 mm)** met marge. Op een 220-bed: **45° gedraaid** printen.
 
 - **Oriëntatie:** flens-kant op het bed (de platte buitenkant naar beneden).
