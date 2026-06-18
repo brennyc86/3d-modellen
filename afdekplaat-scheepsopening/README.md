@@ -10,7 +10,9 @@ bovenaan `afdekplaat.py` en zijn met één getal aan te passen.
 
 De opening is **235 mm breed × 245 mm hoog**, met **flink afgeronde hoeken (~10 cm
 radius)** in een schot van **±10 mm dik**. Omdat het gat met de hand gezaagd is, zit
-er overal **3 mm speling** op de insteek (`MARGE`).
+er overal **1 cm speling per zijde** op de insteek (`MARGE`). De flens (4 mm overlap)
+dekt het gat nog steeds af en de richel grijpt 12 mm achter het schot — **centreer 'm
+wel** bij montage, want de flens overlapt 4 mm en de insteek heeft 1 cm speling.
 
 > **Bovendeel** — de richel aan de achterkant zit **alleen op het vlakke bovenstuk**
 > (`HAAK_BOVEN_X`), niet in de bocht, zodat je 'm makkelijk kunt inzetten.
