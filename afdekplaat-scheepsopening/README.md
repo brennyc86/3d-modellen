@@ -10,7 +10,11 @@ bovenaan `afdekplaat.py` en zijn met één getal aan te passen.
 
 De opening is **235 mm breed × 245 mm hoog**, met **flink afgeronde hoeken (~10 cm
 radius)** in een schot van **±10 mm dik**. Omdat het gat met de hand gezaagd is, zit
-er overal **1,5 mm speling** op de insteek.
+er overal **3 mm speling** op de insteek (`MARGE`).
+
+> **Bovendeel** — de richel aan de achterkant zit **alleen op het vlakke bovenstuk**
+> (`HAAK_BOVEN_X`), niet in de bocht, zodat je 'm makkelijk kunt inzetten.
+> Het kabelgat zit (van buiten gezien) **links-onder**.
 
 Twee delen die in elkaar haken en met 2 schroeven van buitenaf vastzitten:
 
