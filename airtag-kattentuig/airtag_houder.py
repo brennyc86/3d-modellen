@@ -52,13 +52,26 @@ ROND_RAND  = 3.2    # bovenrand van de bak, buitenkant -- vrijwel volrond
 ROND_LIP   = 1.8    # onderkant van de lip: vloeit in de wand van de tagholte
 ROND_TIP   = 1.0    # binnenrand bovenaan, waar de lip over de tag valt
 ROND_VLOER = 0.8    # binnenhoek onderin de tagholte
-ROND_TAB   = 1.5    # bovenranden van de uitstulpingen + rond de riemgaten
-AFSCH_ONDER = 0.9   # inzet aan de bedzijde op laag 1 (start onder 45 graden)
-ROND_ONDER = 1.8    # daarboven buigt die aanloop met deze radius de wand in
+ROND_TAB   = 1.4    # bovenrand van de uitstulpingen
+# De bedzijde ligt tegen de kat aan en is daarom zo rond mogelijk gemaakt. Een
+# echte afronding kan daar niet: laag 1 zou als een flintertje beginnen en
+# omkrullen. Wat wel kan is een LANGE aanloop: hij begint op laag 1 met precies
+# 45 graden en buigt daarna met een ruime radius de wand in. Hoe groter deze twee
+# getallen, hoe verder de rand van de kat wegrolt.
+AFSCH_ONDER = 1.6   # inzet van de omtrek op laag 1
+ROND_ONDER = 3.2    # radius waarmee die aanloop de verticale wand in buigt
+
+# De riemgaten raken de kat niet, dus die krijgen een kleinere aanloop -- anders
+# blijft er tussen gat en rand van de uitstulping te weinig materiaal over.
+AFSCH_GAT  = 0.6
+ROND_GAT   = 1.2
+ROND_GAT_TOP = 0.8  # afronding van de bovenrand van de riemgaten
+AFSCH_DRUK = 1.0    # aanloop rond het uitduwgat, ook aan de kant van de kat
+ROND_DRUK  = 2.0
 
 # --- uitstulpingen -----------------------------------------------------------
 UITSTULP_B = 22.0   # breedte van de uitstulpingen
-UITSTULP_D = 3.8    # dikte van de uitstulpingen
+UITSTULP_D = 4.4    # dikte van de uitstulpingen (past de hele aanloop in)
 GAT_B      = 15.0   # gat: breedte (dwars op de riem)
 GAT_L      = 8.0    # gat: lengte (in de looprichting) -- de sluitclip moet erdoor
 GAT_R      = 1.5    # afronding hoeken van het gat
@@ -150,21 +163,26 @@ def _volg(ring, punten):
     return np.array([ring.interpolate(v % ring.length).coords[0] for v in t])
 
 
-def gelofte(poly, niveaus):
-    """Plaat met een echte schuine/afgeronde rand: de omtrek wordt tussen de
-    niveaus doorgelofd, dus geen trapjes zoals bij gestapelde plakjes.
-    niveaus = [(z, inzet), ...] met inzet = hoever de omtrek naar binnen ligt."""
-    basis = _ringen(poly)
-    n_pt = [max(64, int(np.ceil(r.length/0.7))) for r in basis]
+def gelofte(buiten, gaten, prof_buiten, prof_gaten):
+    """Plaat waarvan de omtrek en de gaten elk hun eigen randprofiel krijgen. De
+    omtrek wordt tussen de niveaus doorgelofd, dus een echte schuine/ronde rand
+    zonder de trapjes die je krijgt als je plakjes op elkaar stapelt."""
+    def vlak(z):
+        d_b = np.interp(z, prof_buiten[:, 0], prof_buiten[:, 1])
+        d_g = np.interp(z, prof_gaten[:, 0], prof_gaten[:, 1])
+        p = buiten.buffer(-d_b, join_style=1) if d_b > 1e-9 else buiten
+        return p.difference(gaten.buffer(d_g, join_style=1) if d_g > 1e-9 else gaten)
 
+    hoogtes = np.unique(np.round(np.r_[prof_buiten[:, 0], prof_gaten[:, 0]], 6))
+    basis = _ringen(vlak(hoogtes[len(hoogtes)//2]))
+    n_pt = [max(64, int(np.ceil(r.length/0.7))) for r in basis]
     anker = [_bemonster(r, n) for r, n in zip(basis, n_pt)]
 
     lagen = []
-    for z, d in niveaus:
-        p = poly.buffer(-d, join_style=1) if d > 1e-9 else poly
-        ringen = _ringen(p)
+    for z in hoogtes:
+        ringen = _ringen(vlak(z))
         assert len(ringen) == len(basis), "rand valt uit elkaar: inzet te groot"
-        lagen.append([np.c_[a if d <= 1e-9 else _volg(r, a), np.full(len(a), z)]
+        lagen.append([np.c_[_volg(r, a), np.full(len(a), z)]
                       for r, a in zip(ringen, anker)])
 
     verts, faces, offset = [], [], 0
@@ -177,7 +195,7 @@ def gelofte(poly, niveaus):
                           [offset+j, offset+n+j, offset+n+i]]
             offset += 2*n
 
-    for laag in (lagen[0], lagen[-1]):                 # deksel onder en boven,
+    for laag in (lagen[0], lagen[-1]):                 # deksel onder en boven
         vlak = Polygon(laag[0][:, :2], [r[:, :2] for r in laag[1:]])
         v2, f2 = trimesh.creation.triangulate_polygon(vlak, engine="earcut")
         verts.append(np.c_[v2, np.full(len(v2), laag[0][0, 2])])
@@ -201,46 +219,53 @@ def plattegrond(met_gaten=True):
         lip = sbox(min(0, eind), -UITSTULP_B/2, max(0, eind), UITSTULP_B/2)
         vorm = vorm.union(lip.buffer(-EIND_R).buffer(EIND_R, join_style=1))
     vorm = vorm.buffer(FILET, join_style=1).buffer(-FILET, join_style=1)
-    if met_gaten:
-        for teken in (1, -1):
-            g = sbox(min(teken*GAT_X0, teken*GAT_X1), -GAT_B/2,
-                     max(teken*GAT_X0, teken*GAT_X1), GAT_B/2)
-            vorm = vorm.difference(g.buffer(-GAT_R).buffer(GAT_R, join_style=1))
-    return vorm
+    return vorm.difference(riemgaten()) if met_gaten else vorm
 
 
-def onderrand():
-    """Randprofiel aan de bedzijde, als [(z, inzet), ...].
+def riemgaten():
+    """De twee rechtopstaande riemgaten, als 2D-vorm."""
+    g = []
+    for teken in (1, -1):
+        r = sbox(min(teken*GAT_X0, teken*GAT_X1), -GAT_B/2,
+                 max(teken*GAT_X0, teken*GAT_X1), GAT_B/2)
+        g.append(r.buffer(-GAT_R).buffer(GAT_R, join_style=1))
+    return g[0].union(g[1])
 
-    Een echte afronding op laag 1 begint met een flinterdunne rand die omkrult.
-    Daarom start deze rand met een recht stuk van precies 45 graden en buigt hij
-    daarboven met radius ROND_ONDER de verticale wand in. Nergens steiler dan 45,
-    maar het voelt als een afronding in plaats van als een schuine kant."""
-    z_eind = AFSCH_ONDER + ROND_ONDER*(np.sqrt(2) - 1)   # daar staat de wand recht
-    z_knik = z_eind - ROND_ONDER*np.sqrt(0.5)            # eind van het rechte 45-stuk
-    nv = [(0.0, AFSCH_ONDER), (z_knik, AFSCH_ONDER - z_knik)]
+
+def aanloop(inzet, radius):
+    """Bedzijde als [(z, inzet), ...]: een recht stuk van precies 45 graden dat
+    met `radius` de verticale wand in buigt. Nergens steiler dan 45 graden, maar
+    het rolt over `z_eind` mm van de kat weg in plaats van over een scherpe kant."""
+    z_eind = inzet + radius*(np.sqrt(2) - 1)             # daar staat de wand recht
+    z_knik = z_eind - radius*np.sqrt(0.5)                # eind van het rechte 45-stuk
+    nv = [(0.0, inzet), (z_knik, inzet - z_knik)]
     for f in np.radians(np.linspace(-45, 0, NR_ROND))[1:]:
-        nv.append((z_eind + ROND_ONDER*np.sin(f), ROND_ONDER*(1 - np.cos(f))))
+        nv.append((z_eind + radius*np.sin(f), radius*(1 - np.cos(f))))
     return nv
 
 
-def randprofiel():
-    """Volledige rand van de uitstulpingen: onder de gebogen aanloop, boven rond."""
-    nv = list(onderrand()) + [(UITSTULP_D - ROND_TAB, 0.0)]
-    for t in np.linspace(0, ROND_TAB, NR_ROND)[1:]:
-        nv.append((UITSTULP_D - ROND_TAB + t,
-                   ROND_TAB - np.sqrt(max(ROND_TAB**2 - t**2, 0.0))))
-    return nv
+def bovenrond(radius):
+    """Afronding van de bovenrand van een plaat, als [(z, inzet), ...]."""
+    return [(UITSTULP_D - radius + t, radius - np.sqrt(max(radius**2 - t**2, 0.0)))
+            for t in np.linspace(0, radius, NR_ROND)]
+
+
+def randprofiel(inzet, radius, top):
+    """Volledig randprofiel van onder naar boven, altijd oplopend in z."""
+    nv = aanloop(inzet, radius) + [(UITSTULP_D - top, 0.0)] + bovenrond(top)
+    return np.array(sorted(nv))
 
 
 def maak_houder():
     # --- bodem + de twee uitstulpingen, randen rondom afgewerkt
-    onder = gelofte(plattegrond(), randprofiel())
+    onder = gelofte(plattegrond(met_gaten=False), riemgaten(),
+                    randprofiel(AFSCH_ONDER, ROND_ONDER, ROND_TAB),
+                    randprofiel(AFSCH_GAT, ROND_GAT, ROND_GAT_TOP))
 
     # --- de ronde bak: afschuining onderaan, bovenrand helemaal rondgezet
     bak = wentel([
         (0.0, 0.0),
-        *[(R_BUI - d, z) for z, d in onderrand()],
+        *[(R_BUI - d, z) for z, d in aanloop(AFSCH_ONDER, ROND_ONDER)],
         (R_BUI, z_top - ROND_RAND),
         *boog(R_BUI - ROND_RAND, z_top - ROND_RAND, ROND_RAND, 0, 90),
         (0.0, z_top),
@@ -263,12 +288,12 @@ def maak_houder():
 
     # --- uitduwgat in de bodem, beide randen gebroken
     if DRUK_D > 0:
-        rd, br = DRUK_D/2, 1.2
+        rd, br = DRUK_D/2, 1.0
+        aan = aanloop(AFSCH_DRUK, ROND_DRUK)
         romp = D(romp, wentel([
             (0.0, -1.0),
-            (rd + br + 1.0, -1.0),
-            (rd + br, 0.0),
-            (rd, br),
+            (rd + AFSCH_DRUK + 1.0, -1.0),
+            *[(rd + d, z) for z, d in aan],           # zelfde soort aanloop als buiten
             (rd, BODEM - br),
             *boog(rd + br, BODEM - br, br, 180, 90),
             (0.0, BODEM),
@@ -277,9 +302,11 @@ def maak_houder():
     return romp
 
 
-def overhang_rapport(m, grens=45.0):
+def overhang_rapport(m, grens=46.0):
     """Hoeveel neerwaarts vlak staat er steiler dan `grens` graden? Alles boven
-    de 45 zou support vragen; het bedvlak zelf telt niet mee."""
+    de 45 zou support vragen; het bedvlak zelf telt niet mee. De grens staat op
+    46 en niet op 45, omdat de aanloop aan de bedzijde met opzet precies 45 graden
+    is: door afrondingsruis vallen die facetten anders willekeurig net erbuiten."""
     omlaag = (m.face_normals[:, 2] < -1e-6) & (m.triangles[:, :, 2].min(axis=1) > 0.05)
     hoek = np.degrees(np.arcsin(np.clip(-m.face_normals[omlaag, 2], 0, 1)))
     opp = m.area_faces[omlaag]
@@ -306,5 +333,5 @@ if __name__ == "__main__":
     print(f"  afrondingen: buitenrand r{ROND_RAND}, liponder r{ROND_LIP}, "
           f"liptip r{ROND_TIP}, uitstulping r{ROND_TAB}, bedzijde 45° x {AFSCH_ONDER}")
     slecht, totaal = overhang_rapport(m)
-    print(f"  overhangcontrole: {slecht:.2f} mm2 van {totaal:.0f} mm2 neerwaarts "
-          f"vlak staat steiler dan 45° -> {'GEEN support nodig' if slecht < 2 else 'LET OP'}")
+    print(f"  overhangcontrole: {slecht:.2f} mm2 van {totaal:.0f} mm2 neerwaarts vlak "
+          f"staat steiler dan 46° -> {'GEEN support nodig' if slecht < 2 else 'LET OP'}")
