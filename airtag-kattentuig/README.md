@@ -1,91 +1,88 @@
-# AirTag-houder voor een kattentuigje
+# AirTag-houder voor een kattentuigje — TPU
 
-Eén stuk, **geen support, geen losse delen**. Voor een B-merk tracker van
-**Ø35 × 8 mm** aan een riem van **15 mm** breed.
+Eén stuk, **geen support en nergens een brug**. Voor een B-merk tracker van
+**Ø35 × 8 mm**, met aan weerszijden een uitstulping met een gat van **15 × 8 mm**.
 
 ![houder](preview_houder.png)
 
-De tag klikt van bovenaf in en wordt vastgehouden door een rondlopende lip.
-Die lip loopt **42° uit het lood** naar binnen — elke laag steunt dus op de vorige,
-en de printer heeft nergens support nodig.
+## Hoe het in elkaar zit
 
-![tag inleggen](preview_inleggen.png)
+Een ronde bak waar de tag van bovenaf onder een rondlopende lip in wordt gedrukt.
+Aan weerszijden een platte uitstulping met een **rechtopstaand** gat: je weeft het
+tuigje er zelf doorheen en bepaalt zelf of de riem **onder** of **boven** de houder
+langs loopt.
 
-De riem gaat er dwars onderdoor. Doordat het één doorlopende tunnel is over de volle
-49 mm, kan de houder **niet draaien en niet kantelen** op het tuigje.
+![doorsneden](doorsneden.png)
+
+Onder in de bak zit een gat van Ø20 mm om de tag er weer uit te duwen. Loopt de riem
+onder de houder door, dan drukt die riem meteen tegen de achterkant van de tag — een
+tweede reden waarom hij er niet uit kan.
 
 ## Maten
 
 | | mm |
 |---|---|
-| totale hoogte | 20,2 |
-| hoogte bóven de riem | 10,8 |
-| buitenmaat | 49,2 × 39,2 (rond deel Ø 39,2) |
-| riemsleuf | 15 breed × 8 hoog |
-| tagholte | Ø 35,6 × 8,15 |
-| opening (onder de lip door) | Ø 33,4 |
-| gewicht | ~9 cm³, geprint ongeveer 7–9 g |
+| totaal | 69,2 × 22,0, ronde bak Ø 40,2 |
+| hoogte | 12,7 |
+| dikte uitstulpingen | 3,0 |
+| riemgaten | 15 × 8, hoeken r1,5 |
+| tagholte | Ø 35,4 × 8,15 |
+| opening onder de lip | Ø 31,0 |
+| lip | 2,2 mm overstek |
+| gewicht | ~6,4 cm³, geprint ongeveer 5–7 g |
 
-![doorsneden](doorsneden.png)
+## Wat er is veranderd t.o.v. de eerste versie
 
-## Waarom het zonder support print
+Alle drie je punten zaten er inderdaad in:
 
-Er zit maar één echte uitdaging in en die is opgelost:
-
-- **De lip over de tag** gaat met 0,9 mm naar binnen per mm hoogte. Dat is 42° uit het
-  lood, dus ruim binnen de 45° die elke printer aankan. In de doorsnede hieronder ligt
-  de lip netjes binnen de 45°-referentielijn.
+- **Lip was te mager** — van 1,1 naar **2,2 mm**. In TPU mag dat gerust fors, het
+  materiaal rekt gewoon over de tag heen. De hoek is tegelijk flauwer gemaakt
+  (39° in plaats van 42° uit het lood), dus de overhang is ook nog eens veiliger.
   ![lipdetail](detail_lip.png)
-- **De 45°-overgang** van de smalle riemtunnel naar de ronde bak is precies 45°.
-- **Het dak van de riemtunnel** is het enige stukje dat overbrugd wordt. De bovenhoeken
-  van de sleuf zijn 2 mm afgeschuind, dus er blijft ~11 mm vlakke brug over. Dat doet
-  elke printer zonder support.
+- **Te slap door de grote openingen** — de veersleuven en de duimuitsparing zijn
+  eruit. De wand loopt nu helemaal rond en dicht. In TPU heb je die sleuven niet
+  nodig om de tag erin te krijgen, en zonder blijft de bak zijn vorm houden.
+- **De tunnel printte niet** — die is weg. De gaten staan nu rechtop door een platte
+  uitstulping, dus er wordt **nergens** iets overbrugd. Dat is meteen de reden dat
+  je zelf kunt kiezen hoe je de riem laat lopen.
 
-## De tag erin en eruit
+De houder is er ook flink lager door geworden: 12,7 mm in plaats van 20,2 mm.
 
-- **Erin**: kantel de tag, schuif één rand onder de lip en druk de andere kant aan tot
-  hij klikt. De wand heeft **4 veersleuven** zodat de rand meegeeft.
-- **Eruit**: aan één kant (haaks op de riem) zit een **duimuitsparing**. Duim erop,
-  tag kantelt eruit.
+## Printen (TPU)
 
-De veersleuven en de uitsparing laten meteen het piepje van de tracker goed door.
+De STL staat goed op het bed: **platte onderkant naar beneden, opening omhoog**.
 
-## Printen
+- **TPU 95A**, laag 0,2 mm, **3 wanden**, 25–30 % infill.
+- Langzaam: 20–30 mm/s, retractie zo goed als uit, direct drive.
+- Support: **uit**. De enige overhang is de lip op 39° en die draagt zichzelf.
+- Print op een schoon bed met een dun laagje lijm — TPU hecht anders juist te goed.
 
-De STL staat al goed op het bed: **platte onderkant naar beneden, opening omhoog**.
-
-- Laag 0,2 mm, **3 wanden** (belangrijk — die wand moet veren, niet knappen), 20–25 % infill.
-- **PETG of ASA**: blijft taai en kan tegen vocht en zon. PLA kan ook, maar wordt bros
-  in de zon en dan breekt de lip een keer af.
-- Support: **uit**. Brug-instellingen op standaard.
-- Printtijd ongeveer 25 minuten.
+Zachter (85A) mag ook; dan wel `LIP` iets kleiner zetten, anders glijdt de tag er bij
+een flinke trek doorheen. Wil je hem in PETG in plaats van TPU? Zet dan `LIP` op 1,2 —
+2,2 mm krijg je in hard plastic niet meer over de tag heen.
 
 ## Als het niet past
 
-Alle maten staan bovenin `airtag_houder.py`. Aanpassen en één keer
-`python3 airtag_houder.py` draaien geeft een nieuwe STL.
+Alle maten staan bovenin `airtag_houder.py`. Aanpassen en `python3 airtag_houder.py`
+draaien geeft een nieuwe STL.
 
 | Parameter | Wat | Nu |
 |---|---|---|
 | `TAG_D` / `TAG_H` | maat van je tracker | 35 / 8 |
-| `SPEL_D` / `SPEL_H` | speling om de tag | 0,6 / 0,15 |
-| `LIP` | hoeveel de lip over de tag valt | 1,1 |
-| `LIP_HELLING` | dr/dz van de lip; 1,0 = precies 45° | 0,9 |
-| `SLEUF_B` / `SLEUF_H` | riemsleuf | 15 / 8 |
-| `UITSTEEK` | hoever de tunnel buiten de bak steekt | 5 |
-| `N_VEER` / `VEER_B` | veersleuven in de wand | 4 / 2,5 |
-| `DUIM_B` / `DUIM_DIEP` | duimuitsparing (0 = geen) | 14 / 4,6 |
+| `SPEL_D` / `SPEL_H` | speling om de tag | 0,4 / 0,15 |
+| `LIP` | hoeveel de lip over de tag valt | 2,2 |
+| `LIP_HELLING` | dr/dz van de lip; 1,0 = 45° | 0,8 |
+| `GAT_B` / `GAT_L` | riemgat breed × lang | 15 / 8 |
+| `UITSTULP_B` / `UITSTULP_D` | uitstulping breed / dik | 22 / 3 |
+| `RAND_BIN` / `RAND_BUI` | materiaal binnen / buiten het gat | 2,5 / 4 |
+| `DRUK_D` | uitduwgat in de bodem (0 = dicht) | 20 |
 
-**Valt de tag eruit?** `LIP` naar 1,4. **Krijg je hem er niet in?** `LIP` naar 0,8,
-of `N_VEER` naar 6 (meer sleuven = soepelere rand).
-**Rammelt de tag?** `SPEL_H` naar 0,05.
+**Valt de tag eruit?** `LIP` naar 2,6. **Krijg je hem er niet in?** `LIP` naar 1,8.
+**Te lang naar je zin?** `GAT_L` naar 5 maakt hem 6 mm korter; een riempje van 2 mm
+dik heeft die 8 mm niet nodig, dat was ruim genomen omdat jij die maat noemde.
 
-## Twee dingen om te weten
+## Nog even over de kat
 
-1. **8 mm sleufhoogte is ruim.** Een kattentuigje heeft meestal een bandje van
-   1,5–2 mm dik; dan kan de houder over de riem heen en weer glijden (draaien niet,
-   dat gaat niet meer). Meet je bandje en zet `SLEUF_H` op *dikte + 1 mm* als je
-   wilt dat hij op z'n plek blijft.
-2. **Weeg het geheel even.** Houder plus tag komt op ongeveer 15 g. Prima voor een
-   volwassen kat; gebruik het op een tuigje met veiligheidssluiting en kijk de eerste
-   dagen of er niets schuurt.
+Houder plus tag komt op ongeveer 13 g. Prima voor een volwassen kat. Gebruik het op
+een tuigje met veiligheidssluiting en kijk de eerste dagen of er niets schuurt —
+TPU is zacht, maar 69 mm is wel een flink stuk op een kattenborst.
