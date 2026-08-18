@@ -10,7 +10,7 @@ kant-en-klare STL's, previews en een eigen README.
 |---|---|---|
 | [`afdekplaat-scheepsopening`](afdekplaat-scheepsopening/) | 2-delig afdekplaatje voor een handgezaagde opening in het schot (kat weg bij de elektrakabels). Insteekrichel met vol contact, lap-naad + 2 schroeven, open kabelsleuf. Past op Bambu A1 (≤243 mm). | ✅ v4 |
 | [`a1mini-boot-montage`](a1mini-boot-montage/) | Pootklemmen om een Bambu Lab A1 mini vast te zetten op een (te krap) plankje op de zeilboot. Schroeven binnen de footprint. | ✅ v1 |
-| [`airtag-kattentuig`](airtag-kattentuig/) | Klikhouder voor een Ø35 × 8 mm tracker aan een kattentuigje. Riemtunnel 15 × 8 mm dwars door de onderkant, kliksluiting met veerrand, geluidsgaatjes. | ✅ v1 |
+| [`airtag-kattentuig`](airtag-kattentuig/) | Houder voor een Ø35 × 8 mm tracker aan een kattentuigje. Eén stuk, geen support: tag klikt onder een 42°-lip, riemtunnel 15 × 8 mm dwars door de onderkant. | ✅ v2 |
 
 ## Zelf opnieuw genereren
 

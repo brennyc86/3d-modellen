@@ -1,24 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-AirTag-houder voor een kattentuigje  (B-merk tag: Ø35 x 8 mm)
+AirTag-houder voor een kattentuigje -- EEN STUK, geen support
 =============================================================
-Twee delen die op elkaar klikken:
+Voor een B-merk tracker van Ø35 x 8 mm, aan een riem van 15 mm breed.
 
-  KAP  -- ronde kap met de holte voor de tag (zit aan de buitenkant).
-  VOET -- bodemplaat met daaronder een riemtunnel van 15 x 8 mm; klikt in de kap.
+Een ronde bak met de riemtunnel eronder. De tag klikt van bovenaf in en wordt
+vastgehouden door een rondlopende lip. Die lip loopt onder 45 graden naar binnen,
+dus elke laag steunt op de vorige -> printbaar zonder support, en zonder brug.
 
-De riem van het tuigje gaat dwars door de tunnel, van de ene uitstulping naar de
-andere. Daardoor:
-  - kan de houder niet draaien of verschuiven op de riem;
-  - drukt de riem/de kat de VOET juist *in* de kap -> de klik kan niet openvallen.
+Print-orientatie zit al in de STL: platte onderkant op het bed, opening omhoog.
+Het enige wat overbrugd wordt is het dak van de riemtunnel; de bovenhoeken daarvan
+zijn onder 45 graden afgeschuind zodat er nog maar ~11 mm vlak te overbruggen is.
 
-De tag laadt van onderaf in: kap eraf klikken, tag erin, voet erop drukken.
-
-Print-orientatie zit al in de STL's:
-  KAP  = platte bovenkant op het bed, holte omhoog  -> geen support.
-  VOET = tunnelbodem op het bed, plug omhoog        -> geen support
-         (het tunneldak is een vlakke brug van 15 mm, dat kan elke printer).
+De wand heeft 4 veersleuven, zodat de rand naar buiten kan veren als je de tag
+erin drukt. Aan een kant zit een duimuitsparing om hem er weer uit te duwen.
 
 Maten in mm. Z=0 = kant tegen de kat, Z omhoog = van de kat af.
 """
@@ -34,70 +30,56 @@ ENGINE = "manifold"
 TAG_D      = 35.0   # diameter van de tag (METEN)
 TAG_H      = 8.0    # dikte van de tag (METEN)
 SPEL_D     = 0.6    # speling op de diameter (totaal, dus 0,3 per zijde)
-SPEL_H     = 0.3    # speling op de dikte
+SPEL_H     = 0.15   # speling op de dikte (lip drukt de tag licht aan)
 
-WAND       = 2.0    # wanddikte van de kap
-TOP_DIK    = 1.6    # dikte bovenplaat kap (buitenkant)
-FLENS_DIK  = 1.6    # dikte bodemplaat = tunneldak
-PLUG_H     = 2.4    # hoogte van de klikrand van de voet
-PLUG_WAND  = 1.2    # wanddikte klikrand (dun = veert lekker)
+WAND       = 1.8    # wanddikte van de bak
+BODEM      = 1.4    # bodem van de tagholte = dak van de riemtunnel
+
+LIP        = 1.1    # hoeveel de lip over de tag valt (groter = houdt steviger,
+                    #   maar moeilijker inklikken).  Opening wordt TAG_D - 2*LIP
+LIP_HELLING = 0.9   # dr/dz van de lip; 1.0 = 45 graden. Lager = flauwer = veiliger
 
 SLEUF_B    = 15.0   # riemsleuf breedte
 SLEUF_H    = 8.0    # riemsleuf hoogte
-SLEUF_R    = 1.5    # hoekafronding in de sleuf
+SLEUF_R    = 1.5    # afronding onderhoeken sleuf
+SLEUF_SCHUIN = 2.0  # 45-graden afschuining bovenhoeken -> kortere brug
 LUS_WAND   = 4.0    # materiaal naast de sleuf
-BRUG_DIK   = 1.6    # materiaal onder de sleuf (kant van de kat)
-UITSTEEK   = 5.0    # hoever de tunnel buiten de ronde kap uitsteekt (per zijde)
+BRUG_DIK   = 1.4    # materiaal onder de sleuf (kant van de kat)
+UITSTEEK   = 5.0    # hoever de tunnel buiten de ronde bak uitsteekt (per zijde)
 
-KLIK       = 0.35   # radiale overlap van de kliknok (hoe stug hij vastklikt)
-N_SPLEET   = 6      # aantal veersleufjes in de klikrand
-SPLEET_B   = 2.0    # breedte veersleufjes
+N_VEER     = 4      # veersleuven in de wand (0 = geen)
+VEER_B     = 2.5    # breedte veersleuf
+VEER_ONDER = 1.4    # hoeveel wand er onder de veersleuf blijft staan (scharnier)
 
-GELUID_D   = 3.0    # geluidsgaatjes in de bovenplaat (0 = geen gaatjes)
-GELUID_N   = 6      # aantal gaatjes op een cirkel + 1 in het midden
-GELUID_R   = 10.0   # cirkel waarop de gaatjes liggen
+DUIM_B     = 14.0   # duimuitsparing om de tag eruit te duwen (0 = geen)
+DUIM_DIEP  = 4.6    # hoever de uitsparing onder de bovenrand doorloopt
 
-NOKJES     = True   # 3 bultjes tegen de bovenplaat -> tag rammelt niet
-NOK_H      = 0.45
-NOK_D      = 3.0
-
-OOR_UIT    = 1.0    # 2 duimnageltjes op de flens om de kap open te wippen
-OOR_B      = 11.0
+RAND_AFSCH = 0.6    # afschuining buitenste bovenrand (geen scherpe kant)
+ONDER_AFSCH = 0.8   # afschuining onderrand, kant van de kat
 
 QS = 128            # segmenten in de ronde delen
 
 # ============================================================
 #  AFGELEIDE MATEN
 # ============================================================
-R_HOLTE = TAG_D/2 + SPEL_D/2          # 17.80  binnenmaat tag
-R_ZIT   = R_HOLTE + 0.15              # 17.95  boring waarin de klikrand valt
-R_BUI   = R_HOLTE + WAND              # 19.80  buitenradius van de houder
-H_HOLTE = TAG_H + SPEL_H              # 8.30
+R_HOLTE = TAG_D/2 + SPEL_D/2           # 17.80  binnenmaat tagholte
+R_BUI   = R_HOLTE + WAND               # 19.60  buitenradius
+R_LIP   = R_HOLTE - LIP                # 16.70  vrije opening (straal)
 
-z0        = 0.0                        # onderkant tunnel (tegen de kat)
-z_sleuf0  = BRUG_DIK                   # 1.60
-z_sleuf1  = z_sleuf0 + SLEUF_H         # 9.60
-z_flens1  = z_sleuf1 + FLENS_DIK       # 11.20  naad tussen voet en kap
-z_plug1   = z_flens1 + PLUG_H          # 13.60  bovenkant klikrand = bodem tagholte
-z_holte1  = z_plug1 + H_HOLTE          # 21.90
-z_top     = z_holte1 + TOP_DIK         # 23.50  buitenkant
+z_sleuf0 = BRUG_DIK                    #  1.40
+z_sleuf1 = z_sleuf0 + SLEUF_H          #  9.40
+z_vloer  = z_sleuf1 + BODEM            # 10.80  bodem van de tagholte
+z_lip0   = z_vloer + TAG_H + SPEL_H    # 18.95  hier begint de lip
+z_top    = z_lip0 + LIP/LIP_HELLING    # 20.17  bovenrand
 
-R_PLUG_BUI = R_HOLTE                   # 17.80  buitenkant klikrand (0,15 speling)
-R_PLUG_BIN = R_PLUG_BUI - PLUG_WAND    # 16.60
-
-R_NOK      = R_ZIT + KLIK              # 18.30  top van de nok op de voet
-R_GROEF    = R_NOK + 0.10              # 18.40  groef in de kap (0,1 lucht)
-
-z_nok0, z_nok1 = z_flens1 + 1.2, z_flens1 + 1.8   # 12.40 .. 13.00
-
-BAR_L = 2*R_BUI + 2*UITSTEEK           # 49.60  lengte van de riemtunnel
+BAR_L = 2*R_BUI + 2*UITSTEEK           # 49.20  lengte van de riemtunnel
 BAR_B = SLEUF_B + 2*LUS_WAND           # 23.00  breedte van de riemtunnel
 
 
 # ============================================================
 #  HULPJES
 # ============================================================
-def U(ms):  return trimesh.boolean.union(ms, engine=ENGINE)
+def U(ms):   return trimesh.boolean.union(ms, engine=ENGINE)
 def D(a, b): return trimesh.boolean.difference([a, b], engine=ENGINE)
 
 
@@ -108,15 +90,9 @@ def wentel(profiel):
         p = np.vstack([p, p[0]])
     m = trimesh.creation.revolve(p, sections=QS)
     m.merge_vertices()
-    if m.volume < 0:            # profiel andersom rond -> normalen omkeren
+    if m.volume < 0:                      # profiel andersom rond -> normalen om
         m.invert()
     return m
-
-
-def cyl(r, za, zb, x=0.0, y=0.0):
-    c = trimesh.creation.cylinder(radius=r, height=zb-za, sections=QS)
-    c.apply_translation([x, y, (za+zb)/2])
-    return c
 
 
 def kegel(r0, r1, za, zb):
@@ -130,19 +106,26 @@ def box(w, d, za, zb, x=0.0, y=0.0):
     return b
 
 
+def prisma_x(poly, L, xc=0.0):
+    """Prisma met de as in X; poly is de doorsnede in (z, y)."""
+    m = trimesh.creation.extrude_polygon(poly, height=L)
+    m.apply_transform(trimesh.transformations.rotation_matrix(-np.pi/2, [0, 1, 0]))
+    m.apply_translation([L/2 + xc, 0, 0])
+    return m
+
+
 def afgeronde_balk(L, B, za, zb, hoek=6.0, afschuin=0.0, stappen=4):
-    """Balk met afgeronde hoeken; optioneel een getrapte afschuining onderaan."""
+    """Balk met afgeronde hoeken; getrapte afschuining aan de onderkant."""
     poly = sbox(-L/2, -B/2, L/2, B/2).buffer(-hoek).buffer(hoek, join_style=1)
     if afschuin <= 0:
         m = trimesh.creation.extrude_polygon(poly, height=zb-za)
         m.apply_translation([0, 0, za])
         return m
-    # getrapte afschuining onderaan (kant van de kat): geen scherpe rand
     h = afschuin/stappen
     delen = []
     for i in range(stappen):
-        p = poly.buffer(-afschuin*(stappen-i)/stappen)
-        s = trimesh.creation.extrude_polygon(p, height=h+0.01)
+        s = trimesh.creation.extrude_polygon(
+                poly.buffer(-afschuin*(stappen-i)/stappen), height=h+0.01)
         s.apply_translation([0, 0, za + i*h])
         delen.append(s)
     romp = trimesh.creation.extrude_polygon(poly, height=zb-za-afschuin)
@@ -150,121 +133,84 @@ def afgeronde_balk(L, B, za, zb, hoek=6.0, afschuin=0.0, stappen=4):
     return U(delen + [romp])
 
 
-def sleuf_profiel(L):
-    """De riemsleuf als balk met afgeronde hoeken, liggend in X."""
-    # na de rotatie om Y geldt: poly-x -> Z (hoogte), poly-y -> Y (breedte)
-    poly = sbox(-SLEUF_H/2, -SLEUF_B/2, SLEUF_H/2, SLEUF_B/2) \
-             .buffer(-SLEUF_R).buffer(SLEUF_R, join_style=1)
-    m = trimesh.creation.extrude_polygon(poly, height=L)
-    # extrusie staat in +Z: kantelen zodat de lengte in X ligt
-    m.apply_transform(trimesh.transformations.rotation_matrix(np.pi/2, [0, 1, 0]))
-    m.apply_translation([-L/2, 0, (z_sleuf0+z_sleuf1)/2])
+def sleuf_snijder(L):
+    """De riemsleuf: onderhoeken rond, bovenhoeken 45 graden -> korte brug."""
+    b, h, s = SLEUF_B/2, SLEUF_H, SLEUF_SCHUIN
+    # doorsnede in (z, y); z loopt van 0 (onder) naar h (boven)
+    pts = [(0.0, -b), (h - s, -b), (h, -b + s), (h, b - s), (h - s, b), (0.0, b)]
+    poly = trimesh.path.polygons.Polygon(pts)
+    poly = poly.buffer(-SLEUF_R).buffer(SLEUF_R, join_style=1)   # hoeken breken
+    m = prisma_x(poly, L)
+    m.apply_translation([0, 0, z_sleuf0])
     return m
 
 
 # ============================================================
-#  DEEL 1 -- KAP
+#  HET MODEL
 # ============================================================
-def maak_kap():
-    ronding = 2.0
-    boog = [(R_HOLTE + ronding*np.sin(a), z_top - ronding + ronding*np.cos(a))
-            for a in np.linspace(0, np.pi/2, 12)]
-
-    profiel = [
-        (R_NOK + 0.15, z_flens1),     # oploop aan de onderrand: klikt makkelijk in
-        (R_ZIT,   z_flens1 + 0.8),    # boring waarin de klikrand valt
-        (R_ZIT,   z_nok0 - 0.25),
-        (R_GROEF, z_nok0),            # klikgroef: steile kant = vasthouden
-        (R_GROEF, z_nok1),
-        (R_ZIT,   z_nok1 + 0.55),     # flauwe kant = makkelijk indrukken
-        (R_ZIT,   z_plug1),
-        (R_HOLTE, z_plug1),           # stap naar de tagholte
-        (R_HOLTE, z_holte1),
-        (0.0,     z_holte1),          # plafond van de holte
-        (0.0,     z_top),
-        *boog,                        # afgeronde bovenrand (r=2)
-        (R_BUI,   z_flens1),          # buitenwand omlaag
-    ]
-    kap = wentel(profiel)
-
-    if NOKJES:                        # bultjes tegen rammelen
-        bult = [cyl(NOK_D/2, z_holte1 - NOK_H, z_holte1,
-                    x=12.0*np.cos(a), y=12.0*np.sin(a))
-                for a in np.deg2rad([90, 210, 330])]
-        kap = U([kap] + bult)
-
-    if GELUID_D > 0:                  # geluid/uitdruk-gaatjes
-        gaten = [cyl(GELUID_D/2, z_holte1 - 1, z_top + 1)]
-        gaten += [cyl(GELUID_D/2, z_holte1 - 1, z_top + 1,
-                      x=GELUID_R*np.cos(a), y=GELUID_R*np.sin(a))
-                  for a in np.linspace(0, 2*np.pi, GELUID_N, endpoint=False)]
-        kap = D(kap, U(gaten))
-
-    return kap
-
-
-# ============================================================
-#  DEEL 2 -- VOET (bodemplaat + riemtunnel)
-# ============================================================
-def maak_voet():
-    # riemtunnel-balk, met een 45-graden overgang naar de ronde flens
-    balk = afgeronde_balk(BAR_L, BAR_B, z0, z_flens1, hoek=6.0, afschuin=0.8)
-    flare = kegel(BAR_B/2, R_BUI, z_flens1 - (R_BUI - BAR_B/2), z_flens1)
-    flens = cyl(R_BUI, z_sleuf1, z_flens1)
-
-    # duimnageltjes om de kap eraf te wippen (haaks op de riem)
-    oren = trimesh.boolean.intersection(
-        [U([box(OOR_B, 2*(R_BUI+OOR_UIT), z_sleuf1, z_flens1)]),
-         cyl(R_BUI + OOR_UIT, z_sleuf1, z_flens1)], engine=ENGINE)
-
-    # klikrand
-    plug = wentel([
-        (R_PLUG_BUI, z_flens1),
-        (R_PLUG_BUI, z_nok0 - 0.25),
-        (R_NOK,      z_nok0),
-        (R_NOK,      z_nok1),
-        (R_PLUG_BUI, z_nok1 + 0.45),   # oploop: makkelijk indrukken
-        (R_PLUG_BUI, z_plug1),
-        (R_PLUG_BIN, z_plug1),
-        (R_PLUG_BIN, z_flens1),
+def maak_houder():
+    # --- massieve romp: riemtunnel-balk + 45-graden overgang + ronde bak
+    balk  = afgeronde_balk(BAR_L, BAR_B, 0.0, z_vloer, hoek=6.0, afschuin=ONDER_AFSCH)
+    flare = kegel(BAR_B/2, R_BUI, z_vloer - (R_BUI - BAR_B/2), z_vloer)
+    bak   = wentel([
+        (0.0,   z_vloer - 0.01),
+        (R_BUI, z_vloer - 0.01),
+        (R_BUI, z_top - RAND_AFSCH),
+        (R_BUI - RAND_AFSCH, z_top),      # gebroken buitenrand (45 gr., printbaar)
+        (0.0,   z_top),
     ])
+    romp = U([balk, flare, bak])
 
-    voet = U([balk, flare, flens, oren, plug])
-    voet = D(voet, sleuf_profiel(BAR_L + 4))
+    # --- riemtunnel eruit
+    romp = D(romp, sleuf_snijder(BAR_L + 6))
 
-    # veersleufjes in de klikrand
-    spleten = []
-    for a in np.linspace(0, 2*np.pi, N_SPLEET, endpoint=False) + np.pi/N_SPLEET:
-        # radiaal helemaal door de klikrand, maar niet tot in de flensrand
-        s = box(3.5, SPLEET_B, z_flens1 - 0.4, z_plug1 + 0.5, x=R_PLUG_BIN + 0.65)
-        s.apply_transform(trimesh.transformations.rotation_matrix(a, [0, 0, 1]))
-        spleten.append(s)
-    voet = D(voet, U(spleten))
-    return voet
+    # --- tagholte met lip erboven: wand loopt onder 45 gr. naar binnen
+    holte = wentel([
+        (0.0,     z_vloer),
+        (R_HOLTE, z_vloer),
+        (R_HOLTE, z_lip0),
+        (R_LIP,   z_top),                 # de lip zelf
+        (0.0,     z_top + 1.0),
+        (0.0,     z_vloer),
+    ])
+    romp = D(romp, holte)
+
+    # --- veersleuven zodat de rand naar buiten kan wijken bij het inklikken
+    if N_VEER:
+        sleuven = []
+        for a in np.linspace(0, 2*np.pi, N_VEER, endpoint=False) + np.pi/4:
+            s = box(5.0, VEER_B, z_vloer + VEER_ONDER, z_top + 1.0, x=R_HOLTE)
+            s.apply_transform(trimesh.transformations.rotation_matrix(a, [0, 0, 1]))
+            sleuven.append(s)
+        romp = D(romp, U(sleuven))
+
+    # --- duimuitsparing (haaks op de riem) om de tag eruit te duwen
+    if DUIM_B > 0:
+        pts = [(0.0, -DUIM_B/2), (0.0, DUIM_B/2),
+               (DUIM_DIEP + 2.0, DUIM_B/2), (DUIM_DIEP + 2.0, -DUIM_B/2)]
+        poly = trimesh.path.polygons.Polygon(pts).buffer(-2.0).buffer(2.0, join_style=1)
+        duim = prisma_x(poly, 12.0, xc=R_HOLTE - 2.0)
+        duim.apply_translation([0, 0, z_top - DUIM_DIEP])
+        duim.apply_transform(trimesh.transformations.rotation_matrix(np.pi/2, [0, 0, 1]))
+        romp = D(romp, duim)
+
+    return romp
 
 
-# ============================================================
 def tag_dummy():
-    return cyl(TAG_D/2, z_plug1, z_plug1 + TAG_H)
+    c = trimesh.creation.cylinder(radius=TAG_D/2, height=TAG_H, sections=QS)
+    c.apply_translation([0, 0, z_vloer + TAG_H/2])
+    return c
 
 
 if __name__ == "__main__":
-    kap, voet = maak_kap(), maak_voet()
-
-    # print-orientatie: kap ondersteboven, voet zoals hij is
-    kap_p = kap.copy()
-    kap_p.apply_transform(trimesh.transformations.rotation_matrix(np.pi, [1, 0, 0]))
-    kap_p.apply_translation([0, 0, -kap_p.bounds[0][2]])
-    voet_p = voet.copy()
-    voet_p.apply_translation([0, 0, -voet_p.bounds[0][2]])
-
-    kap_p.export("airtag_kap.stl")
-    voet_p.export("airtag_voet.stl")
-
-    for naam, m in (("KAP ", kap), ("VOET", voet)):
-        print(f"{naam}: dicht={m.is_watertight} bbox={np.round(m.extents,2)} "
-              f"volume={m.volume/1000:6.2f} cm3  ~{m.volume*1.24/1000:5.1f} g PLA  "
-              f"tris={len(m.faces)}")
-    tot = kap.volume + voet.volume
-    print(f"TOTAAL: hoogte {z_top:.1f} mm, {BAR_L:.1f} x {2*R_BUI:.1f} mm, "
-          f"~{tot*1.24/1000:.1f} g PLA / {tot*1.27/1000:.1f} g PETG")
+    m = maak_houder()
+    m.export("airtag_houder.stl")
+    print(f"HOUDER: dicht={m.is_watertight} delen={m.body_count} "
+          f"bbox={np.round(m.extents,2)} volume={m.volume/1000:.2f} cm3 "
+          f"(~{m.volume*1.27/1000:.1f} g PETG massief)")
+    print(f"  hoogte {z_top:.2f} mm  |  boven de riem {z_top - z_sleuf1:.2f} mm  |  "
+          f"buitenmaat {BAR_L:.1f} x {2*R_BUI:.1f} mm")
+    print(f"  tagholte Ø{2*R_HOLTE:.1f} x {TAG_H+SPEL_H:.2f}  |  "
+          f"opening Ø{2*R_LIP:.1f}  |  lip {LIP:.1f} mm, overstek "
+          f"{np.degrees(np.arctan(LIP_HELLING)):.0f}° uit het lood (<45 = printbaar)")
