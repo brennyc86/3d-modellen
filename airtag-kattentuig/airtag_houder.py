@@ -41,14 +41,14 @@ TAG_H      = 8.0    # dikte van de tag (METEN)
 SPEL_D     = 0.4    # speling op de diameter (TPU: krap mag, het rekt)
 SPEL_H     = 0.15   # speling op de dikte
 
-WAND       = 2.4    # wanddikte van de bak
-BODEM      = 1.8    # dikte van de bodem
+WAND       = 3.0    # wanddikte van de bak
+BODEM      = 2.6    # dikte van de bodem
 
 LIP        = 2.2    # hoeveel de lip over de tag valt
 LIP_HELLING = 0.8   # dr/dz van de lip; 1.0 = 45 gr. 0.8 = 39 gr = veilig voor TPU
 
 # --- afrondingen -------------------------------------------------------------
-ROND_RAND  = 3.2    # bovenrand van de bak, buitenkant -- vrijwel volrond
+ROND_RAND  = 4.0    # bovenrand van de bak: de hele wanddikte rondgezet
 ROND_LIP   = 1.8    # onderkant van de lip: vloeit in de wand van de tagholte
 ROND_TIP   = 1.0    # binnenrand bovenaan, waar de lip over de tag valt
 ROND_VLOER = 0.8    # binnenhoek onderin de tagholte
@@ -58,8 +58,13 @@ ROND_TAB   = 1.4    # bovenrand van de uitstulpingen
 # omkrullen. Wat wel kan is een LANGE aanloop: hij begint op laag 1 met precies
 # 45 graden en buigt daarna met een ruime radius de wand in. Hoe groter deze twee
 # getallen, hoe verder de rand van de kat wegrolt.
-AFSCH_ONDER = 1.6   # inzet van de omtrek op laag 1
-ROND_ONDER = 3.2    # radius waarmee die aanloop de verticale wand in buigt
+# De ronde bak krijgt een veel ruimere aanloop dan de uitstulpingen: die is maar
+# 4,4 mm dik, daar past zo'n bocht simpelweg niet in. Vandaar twee stellen maten.
+AFSCH_BAK  = 3.5    # bak: inzet van de omtrek op laag 1
+ROND_BAK   = 11.9   # bak: radius van de aanloop (max = 3,41 x de inzet)
+
+AFSCH_ONDER = 1.6   # uitstulpingen: inzet van de omtrek op laag 1
+ROND_ONDER = 3.2    # uitstulpingen: radius waarmee die aanloop de wand in buigt
 
 # De riemgaten raken de kat niet, dus die krijgen een kleinere aanloop -- anders
 # blijft er tussen gat en rand van de uitstulping te weinig materiaal over.
@@ -67,7 +72,7 @@ AFSCH_GAT  = 0.6
 ROND_GAT   = 1.2
 ROND_GAT_TOP = 0.8  # afronding van de bovenrand van de riemgaten
 AFSCH_DRUK = 1.0    # aanloop rond het uitduwgat, ook aan de kant van de kat
-ROND_DRUK  = 2.0
+ROND_DRUK  = 1.8
 
 # --- uitstulpingen -----------------------------------------------------------
 UITSTULP_B = 22.0   # breedte van de uitstulpingen
@@ -211,15 +216,17 @@ def gelofte(buiten, gaten, prof_buiten, prof_gaten):
 # ============================================================
 #  HET MODEL
 # ============================================================
-def plattegrond(met_gaten=True):
-    """Bovenaanzicht: ronde bak + twee uitstulpingen, met filet in de overgang."""
-    vorm = Point(0, 0).buffer(R_BUI, resolution=QS//4)
+def tabplattegrond():
+    """Alleen de uitstulpingen, met een schijf ter grootte van de smalste maat van
+    de bak eronder. Die schijf zit altijd bínnen de bak (de bak wordt naar boven
+    toe breder), dus hij overschrijft de ronding van de bak niet, maar geeft de
+    overgang bak <-> uitstulping wel een nette filet."""
+    vorm = Point(0, 0).buffer(R_BUI - AFSCH_BAK, resolution=QS//4)
     for teken in (1, -1):
         eind = teken * (GAT_X1 + RAND_BUI)
         lip = sbox(min(0, eind), -UITSTULP_B/2, max(0, eind), UITSTULP_B/2)
         vorm = vorm.union(lip.buffer(-EIND_R).buffer(EIND_R, join_style=1))
-    vorm = vorm.buffer(FILET, join_style=1).buffer(-FILET, join_style=1)
-    return vorm.difference(riemgaten()) if met_gaten else vorm
+    return vorm.buffer(FILET, join_style=1).buffer(-FILET, join_style=1)
 
 
 def riemgaten():
@@ -257,15 +264,16 @@ def randprofiel(inzet, radius, top):
 
 
 def maak_houder():
-    # --- bodem + de twee uitstulpingen, randen rondom afgewerkt
-    onder = gelofte(plattegrond(met_gaten=False), riemgaten(),
+    # --- de twee uitstulpingen (de ronde bak zit hier bewust NIET in: die heeft
+    #     zijn eigen, veel ruimere aanloop en zou anders overschreven worden)
+    onder = gelofte(tabplattegrond(), riemgaten(),
                     randprofiel(AFSCH_ONDER, ROND_ONDER, ROND_TAB),
                     randprofiel(AFSCH_GAT, ROND_GAT, ROND_GAT_TOP))
 
     # --- de ronde bak: afschuining onderaan, bovenrand helemaal rondgezet
     bak = wentel([
         (0.0, 0.0),
-        *[(R_BUI - d, z) for z, d in aanloop(AFSCH_ONDER, ROND_ONDER)],
+        *[(R_BUI - d, z) for z, d in aanloop(AFSCH_BAK, ROND_BAK)],
         (R_BUI, z_top - ROND_RAND),
         *boog(R_BUI - ROND_RAND, z_top - ROND_RAND, ROND_RAND, 0, 90),
         (0.0, z_top),
@@ -288,7 +296,7 @@ def maak_houder():
 
     # --- uitduwgat in de bodem, beide randen gebroken
     if DRUK_D > 0:
-        rd, br = DRUK_D/2, 1.0
+        rd, br = DRUK_D/2, 0.8
         aan = aanloop(AFSCH_DRUK, ROND_DRUK)
         romp = D(romp, wentel([
             (0.0, -1.0),
@@ -300,6 +308,36 @@ def maak_houder():
         ]))
 
     return romp
+
+
+def buitenprofiel():
+    """De buitenkant van de bak als (z, r), oplopend in z."""
+    pts = [(z, R_BUI - d) for z, d in aanloop(AFSCH_BAK, ROND_BAK)]
+    pts.append((z_top - ROND_RAND, R_BUI))
+    pts += [(z, r) for r, z in boog(R_BUI - ROND_RAND, z_top - ROND_RAND,
+                                    ROND_RAND, 0, 90)]
+    return np.array(pts)
+
+
+def holteprofiel():
+    """De binnenkant (tagholte + lip) als (z, r), oplopend in z."""
+    pts = [(z, r) for r, z in boog(R_HOLTE - ROND_VLOER, BODEM + ROND_VLOER,
+                                   ROND_VLOER, -90, 0)]
+    pts.append((z_lip0, R_HOLTE))
+    pts += [(z, r) for r, z in boog(R_HOLTE - ROND_LIP, z_lip0, ROND_LIP,
+                                    0, np.degrees(ALFA))]
+    pts.append((_T_z, _T_r))
+    pts += [(z, r) for r, z in boog(_C2_r, z_top - ROND_TIP, ROND_TIP,
+                                    180 + np.degrees(ALFA), 90)]
+    return np.array(pts)
+
+
+def wanddikte_rapport(n=400):
+    """Dunste plek in de wand van de bak: buitenkant min binnenkant."""
+    bui, bin_ = buitenprofiel(), holteprofiel()
+    z = np.linspace(BODEM, _T_z, n)
+    d = np.interp(z, bui[:, 0], bui[:, 1]) - np.interp(z, bin_[:, 0], bin_[:, 1])
+    return d.min(), z[int(np.argmin(d))]
 
 
 def overhang_rapport(m, grens=46.0):
@@ -332,6 +370,9 @@ if __name__ == "__main__":
           f"{np.degrees(ALFA):.0f}° uit het lood")
     print(f"  afrondingen: buitenrand r{ROND_RAND}, liponder r{ROND_LIP}, "
           f"liptip r{ROND_TIP}, uitstulping r{ROND_TAB}, bedzijde 45° x {AFSCH_ONDER}")
+    dun, z_dun = wanddikte_rapport()
+    print(f"  wanddikte rond de tagholte: minimaal {dun:.2f} mm (op z={z_dun:.1f}) "
+          f"-> {'ruim genoeg' if dun >= 1.6 else 'TE DUN'}")
     slecht, totaal = overhang_rapport(m)
     print(f"  overhangcontrole: {slecht:.2f} mm2 van {totaal:.0f} mm2 neerwaarts vlak "
           f"staat steiler dan 46° -> {'GEEN support nodig' if slecht < 2 else 'LET OP'}")

@@ -18,48 +18,60 @@ onder de houder door, dan drukt die riem meteen tegen de achterkant van de tag.
 
 ![doorsneden](doorsneden.png)
 
-## De bedzijde (v6) — de kant die tegen de kat aan komt
+## De ronde bak is een kiezel geworden (v7)
 
-| Rand | v5 | nu |
+De bak heeft nu zijn eigen, veel ruimere aanloop dan de uitstulpingen:
+
+| | v6 | nu |
 |---|---|---|
-| **bedzijde: inzet op laag 1** | 0,9 | **1,6** |
-| **bedzijde: radius van de aanloop** | r1,8 | **r3,2** |
-| bedzijde: over welke hoogte hij wegrolt | 1,65 mm | **2,93 mm** |
-| rand van het uitduwgat | 45° × 1,2 | **aanloop 1,0 / r2,0** |
-| bovenrand van de bak, buitenkant | r3,2 | r3,2 |
-| onderkant van de lip (langs de tag) | r1,8 | r1,8 |
-| binnenrand bovenaan (de liptip) | r1,0 | r1,0 |
-| binnenhoek onderin de tagholte | r0,8 | r0,8 |
-| bovenrand van de uitstulpingen | r1,5 | r1,4 |
+| **bak: radius van de aanloop** | r3,2 | **r11,9** — bijna 4× |
+| **bak: inzet op laag 1** | 1,6 mm | **3,5 mm** |
+| **bak: over welke hoogte hij wegrolt** | 2,93 mm | **8,43 mm** |
+| bovenrand van de bak, buitenkant | r3,2 | **r4,0** (= de hele wanddikte) |
+| uitstulpingen: aanloop | 1,6 / r3,2 | ongewijzigd |
+| lip, liptip, vloerhoek | r1,8 / r1,0 / r0,8 | ongewijzigd |
 
-**Wat er niet kan:** een echte afronding aan de bedzijde. Laag 1 zou daar als een
-flintertje beginnen en omkrullen — dat wordt geen ronding maar een rafel.
+Er zit **geen recht stuk wand meer in de bak**. Hij loopt van de bodem in één bocht
+naar buiten tot Ø41,4 op ongeveer 8 mm hoogte, en van daar in één bocht over de
+bovenrand naar de lip. In doorsnede is het een kiezel geworden in plaats van een
+potje met gebroken randen.
 
-**Wat wel kan, en nu ruim twee keer zo ver gaat:** de rand begint op laag 1 met een
-recht stuk van precies 45° en buigt daarna met r3,2 de wand in. De omtrek ligt op
-laag 1 nu **1,6 mm** naar binnen en rolt over bijna **3 mm hoogte** naar de volle
-maat. De kat voelt daardoor geen plaatrand meer maar een schouder die wegloopt.
+De uitstulpingen konden niet mee: die zijn 4,4 mm dik, daar past een bocht van
+r11,9 simpelweg niet in. Ze zitten daarom niet langer in dezelfde omtrek als de bak
+— anders zou hun kleine aanloop die van de bak overschrijven. Ze groeien nu uit de
+flank van de bak.
 
-Het uitduwgat in de bodem ligt ook tegen de kat aan en heeft dezelfde behandeling
-gekregen: die rand loopt nu vloeiend de bodem in in plaats van met een 45° kantje.
+**Wat nog steeds niet kan:** een echte afronding op laag 1. Die begint als een
+flintertje en krult om. De aanloop start dus nog steeds met een recht stuk van
+precies 45°, alleen buigt hij daarna veel geleidelijker weg.
 
-Het contactvlak blijft met ~9,7 cm² ruim genoeg om de druk te spreiden.
+### Wat het kost
 
-**De riemgaten krijgen expres een kleinere aanloop** (1,0 / r1,2). Die raken de kat
-niet, en met de grote aanloop van de omtrek zou er tussen gat en rand van de
-uitstulping te weinig materiaal overblijven. Nu is dat op laag 1 nog 1,3 mm, en
-daarboven meteen ruim 3 mm.
+| | v6 | nu |
+|---|---|---|
+| hoogte | 15,48 | 15,48 |
+| bak Ø | 40,2 | 41,4 |
+| totale lengte | 69,2 | 70,4 |
+| wanddikte rond de tagholte | 2,4 | 3,0 (dunste plek 1,78) |
+| bodemdikte | 1,8 | 2,6 |
 
-Kosten: de uitstulpingen zijn van 3,8 naar 4,4 mm gegaan, want de aanloop van 2,93 mm
-plus de afronding van 1,4 mm bovenop moet er wel in passen. De houder blijft
-14,7 mm hoog.
+Die laatste twee zijn geen luxe maar noodzaak: een grote aanloop eet radiaal in de
+wand rond de tagholte. Met de oude wand van 2,4 mm bleef er bij r11,9 nog maar
+0,9 mm over. `airtag_houder.py` rekent die dunste plek nu zelf uit en zet hem in de
+uitvoer, zodat je het meteen ziet als je aan de knoppen draait:
+
+```
+wanddikte rond de tagholte: minimaal 1.78 mm (op z=3.0) -> ruim genoeg
+```
+
+Het contactvlak tegen de kat blijft ~9,0 cm².
 
 ## Overhang: gecontroleerd, geen support
 
 `airtag_houder.py` meet zelf na hoeveel neerwaarts vlak er steiler dan 45° staat:
 
 ```
-overhangcontrole: 0.12 mm2 van 1180 mm2 neerwaarts vlak staat steiler dan 46°
+overhangcontrole: 0.00 mm2 van 1827 mm2 neerwaarts vlak staat steiler dan 46°
                   -> GEEN support nodig
 ```
 
@@ -74,14 +86,14 @@ overgangen. De lip zelf staat op 39° uit het lood.
 
 | | mm |
 |---|---|
-| totaal | 69,2 × 22,0, ronde bak Ø 40,2 |
-| hoogte | 14,68 |
+| totaal | 70,4 × 22,0, ronde bak Ø 41,4 |
+| hoogte | 15,48 |
 | dikte uitstulpingen | 4,4 |
 | riemgaten | 15 × 8, hoeken r1,5 |
 | tagholte | Ø 35,4 × 8,15 |
 | nauwste opening onder de lip | Ø 31,0 |
 | lip | 2,2 mm overstek onder 39° |
-| gewicht | ~7,2 cm³, geprint ongeveer 5–7 g |
+| gewicht | ~8,4 cm³, geprint ongeveer 6–8 g |
 
 ## Printen (TPU)
 
@@ -103,19 +115,23 @@ draaien geeft een nieuwe STL.
 | `SPEL_D` / `SPEL_H` | speling om de tag | 0,4 / 0,15 |
 | `LIP` | hoeveel de lip over de tag valt | 2,2 |
 | `LIP_HELLING` | dr/dz van de lip; 1,0 = 45° | 0,8 |
-| `ROND_RAND` … `ROND_TAB` | de afrondingen, per rand | 3,2 … 1,4 |
-| `AFSCH_ONDER` / `ROND_ONDER` | **aanloop bedzijde**: inzet op laag 1 / radius | 1,6 / 3,2 |
+| `ROND_RAND` | bovenrand van de bak | 4,0 |
+| `ROND_LIP` / `ROND_TIP` / `ROND_VLOER` | rondingen rond de tag | 1,8 / 1,0 / 0,8 |
+| `AFSCH_BAK` / `ROND_BAK` | **aanloop van de bak**: inzet op laag 1 / radius | 3,5 / 11,9 |
+| `AFSCH_ONDER` / `ROND_ONDER` | idem voor de uitstulpingen | 1,6 / 3,2 |
 | `AFSCH_GAT` / `ROND_GAT` | idem voor de riemgaten | 0,6 / 1,2 |
-| `AFSCH_DRUK` / `ROND_DRUK` | idem voor het uitduwgat | 1,0 / 2,0 |
+| `AFSCH_DRUK` / `ROND_DRUK` | idem voor het uitduwgat | 1,0 / 1,8 |
 | `GAT_B` / `GAT_L` | riemgat breed × lang | 15 / 8 |
 | `UITSTULP_B` / `UITSTULP_D` | uitstulping breed / dik | 22 / 4,4 |
+| `WAND` / `BODEM` | wand rond de tagholte / bodemdikte | 3,0 / 2,6 |
 | `DRUK_D` | uitduwgat in de bodem (0 = dicht) | 20 |
 
-**Nog steeds te hard aan de bedzijde?** Zet `AFSCH_ONDER` en `ROND_ONDER` hoger —
-dat is de enige knop die daar echt helpt. Let dan wel op twee dingen: `UITSTULP_D`
-moet minstens de aanlooplengte + `ROND_TAB` zijn, en het materiaal tussen gat en
-rand van de uitstulping wordt kleiner (`UITSTULP_B` mee omhoog of `AFSCH_GAT`
-omlaag). Het script gooit een duidelijke fout als het echt niet meer past.
+**Bak nog ronder?** `AFSCH_BAK` omhoog en `ROND_BAK` mee (maximaal 3,41 × `AFSCH_BAK`,
+anders start laag 1 steiler dan 45°). Kijk daarna naar de regel *wanddikte rond de
+tagholte* in de uitvoer: zakt die onder ~1,6 mm, zet dan `WAND` of `BODEM` omhoog.
+**Uitstulpingen ronder?** `AFSCH_ONDER` / `ROND_ONDER` omhoog, maar `UITSTULP_D` moet
+minstens de aanlooplengte + `ROND_TAB` zijn en het materiaal tussen gat en rand wordt
+kleiner (`UITSTULP_B` mee omhoog of `AFSCH_GAT` omlaag).
 **Valt de tag eruit?** `LIP` naar 2,6. **Te stug erin?** `LIP` naar 1,8.
 
 ## Opnieuw genereren
