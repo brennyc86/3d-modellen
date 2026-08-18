@@ -5,24 +5,30 @@ AirTag-houder voor een kattentuigje -- EEN STUK, TPU, geen support
 ==================================================================
 Voor een B-merk tracker van Ø35 x 8 mm.
 
-Een ronde bak met aan weerszijden een platte uitstulping met een gat van 15 x 8 mm.
-Het gat staat RECHTOP (van boven naar onder door de lip heen), dus er wordt nergens
-iets overbrugd -- geen tunnel, geen brug, niets wat TPU niet aankan. Je weeft het
-tuigje er zelf doorheen en kiest zelf of de riem onder of boven de houder langs loopt.
+Een ronde bak met aan weerszijden een platte uitstulping met een gat van 15 x 8 mm
+(15 x 8 omdat de sluitclip van het tuigje er ook doorheen moet). Het gat staat
+RECHTOP, dus er wordt nergens iets overbrugd. Je weeft het tuigje er zelf doorheen
+en kiest zelf of de riem onder of boven de houder langs loopt.
 
-De tag klikt van bovenaf onder een rondlopende lip van 2,2 mm. De wand is verder
-helemaal dicht: geen veersleuven, want in TPU wordt het geheel daar te slap van.
-De rek van het materiaal is genoeg om de tag erin te drukken. Eruit duw je hem
-door het gat in de bodem.
+De tag wordt van bovenaf onder een rondlopende lip gedrukt. Eruit duw je hem door
+het gat in de bodem.
+
+ALLE randen zijn afgerond, ook aan de binnenkant rond de tag -- die is zelf ook
+rond, dus de lip volgt zijn vorm. Overal is de vorm zo gekozen dat de overhang
+onder de 45 graden blijft:
+  - naar binnen omlopende vlakken (de lip) staan op 39 graden;
+  - alle afrondingen zitten bovenaan een vlak, waar elke laag op de vorige rust;
+  - aan de bedzijde geen afronding maar een afschuining van 45 graden, want een
+    afronding op laag 1 zou omkrullen.
 
 Print-orientatie zit al in de STL: platte onderkant op het bed, opening omhoog.
-Enige overhang is de lip, en die staat op 39 graden uit het lood.
 
 Maten in mm. Z=0 = kant tegen de kat, Z omhoog = van de kat af.
 """
 import numpy as np
 import trimesh
-from shapely.geometry import box as sbox, Point
+import shapely
+from shapely.geometry import box as sbox, Point, Polygon
 
 ENGINE = "manifold"
 
@@ -37,13 +43,22 @@ SPEL_H     = 0.15   # speling op de dikte
 WAND       = 2.4    # wanddikte van de bak
 BODEM      = 1.8    # dikte van de bodem
 
-LIP        = 2.2    # hoeveel de lip over de tag valt. TPU rekt, dus dit mag fors
+LIP        = 2.2    # hoeveel de lip over de tag valt
 LIP_HELLING = 0.8   # dr/dz van de lip; 1.0 = 45 gr. 0.8 = 39 gr = veilig voor TPU
 
+# --- afrondingen -------------------------------------------------------------
+ROND_RAND  = 1.8    # bovenrand van de bak, buitenkant (helemaal rondgezet)
+ROND_LIP   = 1.0    # onderkant van de lip: vloeit in de wand van de tagholte
+ROND_TIP   = 0.6    # binnenrand bovenaan, waar de lip over de tag valt
+ROND_VLOER = 0.5    # binnenhoek onderin de tagholte
+ROND_TAB   = 1.0    # bovenranden van de uitstulpingen + rond de riemgaten
+AFSCH_ONDER = 0.9   # 45-graden afschuining aan de bedzijde (kant van de kat)
+
+# --- uitstulpingen -----------------------------------------------------------
 UITSTULP_B = 22.0   # breedte van de uitstulpingen
-UITSTULP_D = 3.0    # dikte van de uitstulpingen
+UITSTULP_D = 3.2    # dikte van de uitstulpingen
 GAT_B      = 15.0   # gat: breedte (dwars op de riem)
-GAT_L      = 8.0    # gat: lengte (in de looprichting van de riem)
+GAT_L      = 8.0    # gat: lengte (in de looprichting) -- de sluitclip moet erdoor
 GAT_R      = 1.5    # afronding hoeken van het gat
 RAND_BIN   = 2.5    # materiaal tussen de bak en het gat
 RAND_BUI   = 4.0    # materiaal tussen het gat en het uiteinde
@@ -51,10 +66,10 @@ EIND_R     = 5.0    # afronding van de hoeken van de uitstulping
 FILET      = 3.0    # afronding waar de uitstulping in de bak overgaat
 
 DRUK_D     = 20.0   # gat in de bodem om de tag eruit te duwen (0 = dicht)
-RAND_AFSCH = 0.6    # afschuining buitenste bovenrand
-ONDER_AFSCH = 0.8   # afschuining onderrand, kant van de kat
 
-QS = 128            # segmenten in de ronde delen
+QS   = 128          # segmenten in de ronde delen
+NB   = 14           # punten per afronding
+NR_ROND = 8         # facetten in de afgeronde rand van de uitstulpingen
 
 # ============================================================
 #  AFGELEIDE MATEN
@@ -63,8 +78,16 @@ R_HOLTE = TAG_D/2 + SPEL_D/2           # 17.70  binnenmaat tagholte
 R_BUI   = R_HOLTE + WAND               # 20.10  buitenradius van de bak
 R_LIP   = R_HOLTE - LIP                # 15.50  vrije opening (straal)
 
-z_lip0  = BODEM + TAG_H + SPEL_H       # 9.95   hier begint de lip
-z_top   = z_lip0 + LIP/LIP_HELLING     # 12.70  bovenrand
+ALFA    = np.arctan(LIP_HELLING)       # 38.66 gr. -- hoek van de lip uit het lood
+z_lip0  = BODEM + TAG_H + SPEL_H       #  9.95  hier begint de lip aan te lopen
+
+# opbouw van het lipprofiel: wand -> afronding -> schuin vlak -> afronding -> top
+_A_r    = R_HOLTE - ROND_LIP + ROND_LIP*np.cos(ALFA)   # eind van de onderafronding
+_A_z    = z_lip0 + ROND_LIP*np.sin(ALFA)
+_T_r    = R_LIP + ROND_TIP*(1 - np.cos(ALFA))          # eind van het schuine vlak
+_T_z    = _A_z + (_A_r - _T_r)/LIP_HELLING
+z_top   = _T_z + ROND_TIP*(1 + np.sin(ALFA))           # bovenrand van de bak
+_C2_r   = R_LIP + ROND_TIP                             # hart van de tip-afronding
 
 GAT_X0  = R_BUI + RAND_BIN             # 22.60  binnenkant gat
 GAT_X1  = GAT_X0 + GAT_L               # 30.60  buitenkant gat
@@ -76,6 +99,12 @@ TOT_L   = 2*(GAT_X1 + RAND_BUI)        # 69.20  totale lengte
 # ============================================================
 def U(ms):   return trimesh.boolean.union(ms, engine=ENGINE)
 def D(a, b): return trimesh.boolean.difference([a, b], engine=ENGINE)
+
+
+def boog(cr, cz, r, a0, a1, n=NB):
+    """Punten op een cirkelboog, hoeken in graden."""
+    t = np.radians(np.linspace(a0, a1, n))
+    return list(zip(cr + r*np.cos(t), cz + r*np.sin(t)))
 
 
 def wentel(profiel):
@@ -96,78 +125,145 @@ def uitpers(poly, za, zb):
     return m
 
 
-def cyl(r, za, zb, x=0.0, y=0.0):
-    c = trimesh.creation.cylinder(radius=r, height=zb-za, sections=QS)
-    c.apply_translation([x, y, (za+zb)/2])
-    return c
+def _ringen(poly):
+    """Buitenrand + gaten van een polygoon, altijd in dezelfde volgorde."""
+    p = shapely.geometry.polygon.orient(poly, 1.0)
+    binnen = sorted(p.interiors, key=lambda r: r.centroid.x)
+    return [p.exterior] + list(binnen)
+
+
+def _bemonster(ring, n):
+    """n punten gelijk verdeeld over een ring, startend bij het punt uiterst +X."""
+    L = ring.length
+    pts = np.array([ring.interpolate(i*L/n).coords[0] for i in range(n)])
+    return np.roll(pts, -int(np.argmax(pts[:, 0])), axis=0)
+
+
+def gelofte(poly, niveaus):
+    """Plaat met een echte schuine/afgeronde rand: de omtrek wordt tussen de
+    niveaus doorgelofd, dus geen trapjes zoals bij gestapelde plakjes.
+    niveaus = [(z, inzet), ...] met inzet = hoever de omtrek naar binnen ligt."""
+    basis = _ringen(poly)
+    n_pt = [max(64, int(np.ceil(r.length/0.7))) for r in basis]
+
+    lagen = []
+    for z, d in niveaus:
+        p = poly.buffer(-d, join_style=1) if d > 1e-9 else poly
+        ringen = _ringen(p)
+        assert len(ringen) == len(basis), "rand valt uit elkaar: inzet te groot"
+        lagen.append([np.c_[_bemonster(r, n), np.full(n, z)]
+                      for r, n in zip(ringen, n_pt)])
+
+    verts, faces, offset = [], [], 0
+    for k, n in enumerate(n_pt):                       # zijwanden tussen de niveaus
+        for a, b in zip(lagen[:-1], lagen[1:]):
+            verts += [a[k], b[k]]
+            for i in range(n):
+                j = (i+1) % n
+                faces += [[offset+i, offset+j, offset+n+i],
+                          [offset+j, offset+n+j, offset+n+i]]
+            offset += 2*n
+
+    for laag in (lagen[0], lagen[-1]):                 # deksel onder en boven,
+        vlak = Polygon(laag[0][:, :2], [r[:, :2] for r in laag[1:]])
+        v2, f2 = trimesh.creation.triangulate_polygon(vlak, engine="earcut")
+        verts.append(np.c_[v2, np.full(len(v2), laag[0][0, 2])])
+        faces += (np.asarray(f2) + offset).tolist()
+        offset += len(v2)
+
+    m = trimesh.Trimesh(vertices=np.vstack(verts), faces=np.array(faces))
+    m.merge_vertices()
+    m.fix_normals()
+    return m
 
 
 # ============================================================
 #  HET MODEL
 # ============================================================
-def plattegrond():
+def plattegrond(met_gaten=True):
     """Bovenaanzicht: ronde bak + twee uitstulpingen, met filet in de overgang."""
     vorm = Point(0, 0).buffer(R_BUI, resolution=QS//4)
     for teken in (1, -1):
         eind = teken * (GAT_X1 + RAND_BUI)
         lip = sbox(min(0, eind), -UITSTULP_B/2, max(0, eind), UITSTULP_B/2)
-        lip = lip.buffer(-EIND_R).buffer(EIND_R, join_style=1)   # hoeken rond
-        vorm = vorm.union(lip)
-    # sluiting: vult de holle hoeken bij de overgang bak <-> uitstulping
-    return vorm.buffer(FILET, join_style=1).buffer(-FILET, join_style=1)
+        vorm = vorm.union(lip.buffer(-EIND_R).buffer(EIND_R, join_style=1))
+    vorm = vorm.buffer(FILET, join_style=1).buffer(-FILET, join_style=1)
+    if met_gaten:
+        for teken in (1, -1):
+            g = sbox(min(teken*GAT_X0, teken*GAT_X1), -GAT_B/2,
+                     max(teken*GAT_X0, teken*GAT_X1), GAT_B/2)
+            vorm = vorm.difference(g.buffer(-GAT_R).buffer(GAT_R, join_style=1))
+    return vorm
+
+
+def randprofiel():
+    """Hoogtes + inzet voor de rand van de plaat: onderaan 45 gr. afgeschuind
+    (een afronding zou op laag 1 omkrullen), bovenaan netjes rondgezet."""
+    nv = [(0.0, AFSCH_ONDER), (AFSCH_ONDER, 0.0), (UITSTULP_D - ROND_TAB, 0.0)]
+    for t in np.linspace(0, ROND_TAB, NR_ROND)[1:]:
+        nv.append((UITSTULP_D - ROND_TAB + t,
+                   ROND_TAB - np.sqrt(max(ROND_TAB**2 - t**2, 0.0))))
+    return nv
 
 
 def maak_houder():
-    plan = plattegrond()
+    # --- bodem + de twee uitstulpingen, randen rondom afgewerkt
+    onder = gelofte(plattegrond(), randprofiel())
 
-    # --- onderste laag: bodem + de twee uitstulpingen
-    onder = uitpers(plan, 0.0, UITSTULP_D)
-    # gebroken onderrand (kant van de kat)
-    trap = [uitpers(plan.buffer(-ONDER_AFSCH*(4-i)/4), i*ONDER_AFSCH/4,
-                    (i+1)*ONDER_AFSCH/4 + 0.01) for i in range(4)]
-    onder = U([uitpers(plan, ONDER_AFSCH, UITSTULP_D)] + trap)
-
-    # --- de ronde bak erbovenop
+    # --- de ronde bak: afschuining onderaan, bovenrand helemaal rondgezet
     bak = wentel([
-        (0.0,   0.0),
-        (R_BUI, 0.0),
-        (R_BUI, z_top - RAND_AFSCH),
-        (R_BUI - RAND_AFSCH, z_top),      # gebroken buitenrand, 45 gr = printbaar
-        (0.0,   z_top),
+        (0.0, 0.0),
+        (R_BUI - AFSCH_ONDER, 0.0),
+        (R_BUI, AFSCH_ONDER),
+        (R_BUI, z_top - ROND_RAND),
+        *boog(R_BUI - ROND_RAND, z_top - ROND_RAND, ROND_RAND, 0, 90),
+        (0.0, z_top),
     ])
     romp = U([onder, bak])
 
-    # --- tagholte met de lip erboven
+    # --- tagholte: afgeronde binnenhoek, lip die de ronding van de tag volgt
     holte = wentel([
-        (0.0,     BODEM),
-        (R_HOLTE, BODEM),
+        (0.0, BODEM),
+        (R_HOLTE - ROND_VLOER, BODEM),
+        *boog(R_HOLTE - ROND_VLOER, BODEM + ROND_VLOER, ROND_VLOER, -90, 0),
         (R_HOLTE, z_lip0),
-        (R_LIP,   z_top),                 # de lip: 39 gr. uit het lood
-        (0.0,     z_top + 1.0),
-        (0.0,     BODEM),
+        *boog(R_HOLTE - ROND_LIP, z_lip0, ROND_LIP, 0, np.degrees(ALFA)),
+        (_T_r, _T_z),
+        *boog(_C2_r, z_top - ROND_TIP, ROND_TIP, 180 + np.degrees(ALFA), 90),
+        (_C2_r, z_top + 1.0),
+        (0.0, z_top + 1.0),
     ])
     romp = D(romp, holte)
 
-    # --- gat in de bodem om de tag eruit te duwen
+    # --- uitduwgat in de bodem, beide randen gebroken
     if DRUK_D > 0:
-        romp = D(romp, cyl(DRUK_D/2, -1.0, BODEM + 0.01))
-
-    # --- de twee riemgaten: rechtop, dus geen brug, geen support
-    gaten = []
-    for teken in (1, -1):
-        g = sbox(GAT_X0, -GAT_B/2, GAT_X1, GAT_B/2) \
-                .buffer(-GAT_R).buffer(GAT_R, join_style=1)
-        if teken < 0:
-            g = sbox(-GAT_X1, -GAT_B/2, -GAT_X0, GAT_B/2) \
-                    .buffer(-GAT_R).buffer(GAT_R, join_style=1)
-        gaten.append(uitpers(g, -1.0, UITSTULP_D + 1.0))
-    romp = D(romp, U(gaten))
+        rd, br = DRUK_D/2, 0.8
+        romp = D(romp, wentel([
+            (0.0, -1.0),
+            (rd + br + 1.0, -1.0),
+            (rd + br, 0.0),
+            (rd, br),
+            (rd, BODEM - br),
+            *boog(rd + br, BODEM - br, br, 180, 90),
+            (0.0, BODEM),
+        ]))
 
     return romp
 
 
+def overhang_rapport(m, grens=45.0):
+    """Hoeveel neerwaarts vlak staat er steiler dan `grens` graden? Alles boven
+    de 45 zou support vragen; het bedvlak zelf telt niet mee."""
+    omlaag = (m.face_normals[:, 2] < -1e-6) & (m.triangles[:, :, 2].min(axis=1) > 0.05)
+    hoek = np.degrees(np.arcsin(np.clip(-m.face_normals[omlaag, 2], 0, 1)))
+    opp = m.area_faces[omlaag]
+    return opp[hoek > grens].sum(), opp.sum()
+
+
 def tag_dummy():
-    return cyl(TAG_D/2, BODEM, BODEM + TAG_H)
+    c = trimesh.creation.cylinder(radius=TAG_D/2, height=TAG_H, sections=QS)
+    c.apply_translation([0, 0, BODEM + TAG_H/2])
+    return c
 
 
 if __name__ == "__main__":
@@ -176,10 +272,13 @@ if __name__ == "__main__":
     print(f"HOUDER: dicht={m.is_watertight} delen={m.body_count} "
           f"bbox={np.round(m.extents, 2)} volume={m.volume/1000:.2f} cm3 "
           f"(~{m.volume*1.21/1000:.1f} g TPU massief)")
-    print(f"  {TOT_L:.1f} x {UITSTULP_B:.1f} mm uitstulpingen, bak Ø{2*R_BUI:.1f}, "
-          f"hoogte {z_top:.2f} mm")
-    print(f"  tagholte Ø{2*R_HOLTE:.1f} x {TAG_H+SPEL_H:.2f}  |  opening Ø{2*R_LIP:.1f} "
-          f"|  lip {LIP:.1f} mm, overstek "
-          f"{np.degrees(np.arctan(LIP_HELLING)):.0f}° uit het lood")
-    print(f"  riemgaten {GAT_L:.0f} x {GAT_B:.0f} mm, rechtop door de uitstulping "
-          f"(dikte {UITSTULP_D:.1f} mm)")
+    print(f"  {TOT_L:.1f} x {UITSTULP_B:.1f} mm uitstulpingen (dik {UITSTULP_D}), "
+          f"bak Ø{2*R_BUI:.1f}, hoogte {z_top:.2f} mm")
+    print(f"  tagholte Ø{2*R_HOLTE:.1f} x {TAG_H+SPEL_H:.2f}  |  "
+          f"nauwste opening Ø{2*R_LIP:.1f}  |  lip {LIP:.1f} mm onder "
+          f"{np.degrees(ALFA):.0f}° uit het lood")
+    print(f"  afrondingen: buitenrand r{ROND_RAND}, liponder r{ROND_LIP}, "
+          f"liptip r{ROND_TIP}, uitstulping r{ROND_TAB}, bedzijde 45° x {AFSCH_ONDER}")
+    slecht, totaal = overhang_rapport(m)
+    print(f"  overhangcontrole: {slecht:.2f} mm2 van {totaal:.0f} mm2 neerwaarts "
+          f"vlak staat steiler dan 45° -> {'GEEN support nodig' if slecht < 2 else 'LET OP'}")
