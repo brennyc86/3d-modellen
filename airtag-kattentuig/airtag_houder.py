@@ -18,8 +18,9 @@ rond, dus de lip volgt zijn vorm. Overal is de vorm zo gekozen dat de overhang
 onder de 45 graden blijft:
   - naar binnen omlopende vlakken (de lip) staan op 39 graden;
   - alle afrondingen zitten bovenaan een vlak, waar elke laag op de vorige rust;
-  - aan de bedzijde geen afronding maar een afschuining van 45 graden, want een
-    afronding op laag 1 zou omkrullen.
+  - de bedzijde begint met een recht stukje van precies 45 graden en buigt daarna
+    met een ruime radius de wand in: het rondste wat op laag 1 kan zonder om te
+    krullen.
 
 Print-orientatie zit al in de STL: platte onderkant op het bed, opening omhoog.
 
@@ -47,16 +48,17 @@ LIP        = 2.2    # hoeveel de lip over de tag valt
 LIP_HELLING = 0.8   # dr/dz van de lip; 1.0 = 45 gr. 0.8 = 39 gr = veilig voor TPU
 
 # --- afrondingen -------------------------------------------------------------
-ROND_RAND  = 1.8    # bovenrand van de bak, buitenkant (helemaal rondgezet)
-ROND_LIP   = 1.0    # onderkant van de lip: vloeit in de wand van de tagholte
-ROND_TIP   = 0.6    # binnenrand bovenaan, waar de lip over de tag valt
-ROND_VLOER = 0.5    # binnenhoek onderin de tagholte
-ROND_TAB   = 1.0    # bovenranden van de uitstulpingen + rond de riemgaten
-AFSCH_ONDER = 0.9   # 45-graden afschuining aan de bedzijde (kant van de kat)
+ROND_RAND  = 3.2    # bovenrand van de bak, buitenkant -- vrijwel volrond
+ROND_LIP   = 1.8    # onderkant van de lip: vloeit in de wand van de tagholte
+ROND_TIP   = 1.0    # binnenrand bovenaan, waar de lip over de tag valt
+ROND_VLOER = 0.8    # binnenhoek onderin de tagholte
+ROND_TAB   = 1.5    # bovenranden van de uitstulpingen + rond de riemgaten
+AFSCH_ONDER = 0.9   # inzet aan de bedzijde op laag 1 (start onder 45 graden)
+ROND_ONDER = 1.8    # daarboven buigt die aanloop met deze radius de wand in
 
 # --- uitstulpingen -----------------------------------------------------------
 UITSTULP_B = 22.0   # breedte van de uitstulpingen
-UITSTULP_D = 3.2    # dikte van de uitstulpingen
+UITSTULP_D = 3.8    # dikte van de uitstulpingen
 GAT_B      = 15.0   # gat: breedte (dwars op de riem)
 GAT_L      = 8.0    # gat: lengte (in de looprichting) -- de sluitclip moet erdoor
 GAT_R      = 1.5    # afronding hoeken van het gat
@@ -69,7 +71,7 @@ DRUK_D     = 20.0   # gat in de bodem om de tag eruit te duwen (0 = dicht)
 
 QS   = 128          # segmenten in de ronde delen
 NB   = 14           # punten per afronding
-NR_ROND = 8         # facetten in de afgeronde rand van de uitstulpingen
+NR_ROND = 10        # facetten per afronding in de rand van de uitstulpingen
 
 # ============================================================
 #  AFGELEIDE MATEN
@@ -139,6 +141,15 @@ def _bemonster(ring, n):
     return np.roll(pts, -int(np.argmax(pts[:, 0])), axis=0)
 
 
+def _volg(ring, punten):
+    """Zoek op `ring` de punten die het dichtst bij `punten` liggen, in dezelfde
+    volgorde. Zo lopen de facetten van een gelofte rand mooi loodrecht mee in
+    plaats van scheef weg te lopen bij de bochten."""
+    t = np.array([ring.project(Point(p)) for p in punten])
+    t = t[0] + np.maximum.accumulate(np.unwrap(t - t[0], period=ring.length))
+    return np.array([ring.interpolate(v % ring.length).coords[0] for v in t])
+
+
 def gelofte(poly, niveaus):
     """Plaat met een echte schuine/afgeronde rand: de omtrek wordt tussen de
     niveaus doorgelofd, dus geen trapjes zoals bij gestapelde plakjes.
@@ -146,13 +157,15 @@ def gelofte(poly, niveaus):
     basis = _ringen(poly)
     n_pt = [max(64, int(np.ceil(r.length/0.7))) for r in basis]
 
+    anker = [_bemonster(r, n) for r, n in zip(basis, n_pt)]
+
     lagen = []
     for z, d in niveaus:
         p = poly.buffer(-d, join_style=1) if d > 1e-9 else poly
         ringen = _ringen(p)
         assert len(ringen) == len(basis), "rand valt uit elkaar: inzet te groot"
-        lagen.append([np.c_[_bemonster(r, n), np.full(n, z)]
-                      for r, n in zip(ringen, n_pt)])
+        lagen.append([np.c_[a if d <= 1e-9 else _volg(r, a), np.full(len(a), z)]
+                      for r, a in zip(ringen, anker)])
 
     verts, faces, offset = [], [], 0
     for k, n in enumerate(n_pt):                       # zijwanden tussen de niveaus
@@ -196,10 +209,24 @@ def plattegrond(met_gaten=True):
     return vorm
 
 
+def onderrand():
+    """Randprofiel aan de bedzijde, als [(z, inzet), ...].
+
+    Een echte afronding op laag 1 begint met een flinterdunne rand die omkrult.
+    Daarom start deze rand met een recht stuk van precies 45 graden en buigt hij
+    daarboven met radius ROND_ONDER de verticale wand in. Nergens steiler dan 45,
+    maar het voelt als een afronding in plaats van als een schuine kant."""
+    z_eind = AFSCH_ONDER + ROND_ONDER*(np.sqrt(2) - 1)   # daar staat de wand recht
+    z_knik = z_eind - ROND_ONDER*np.sqrt(0.5)            # eind van het rechte 45-stuk
+    nv = [(0.0, AFSCH_ONDER), (z_knik, AFSCH_ONDER - z_knik)]
+    for f in np.radians(np.linspace(-45, 0, NR_ROND))[1:]:
+        nv.append((z_eind + ROND_ONDER*np.sin(f), ROND_ONDER*(1 - np.cos(f))))
+    return nv
+
+
 def randprofiel():
-    """Hoogtes + inzet voor de rand van de plaat: onderaan 45 gr. afgeschuind
-    (een afronding zou op laag 1 omkrullen), bovenaan netjes rondgezet."""
-    nv = [(0.0, AFSCH_ONDER), (AFSCH_ONDER, 0.0), (UITSTULP_D - ROND_TAB, 0.0)]
+    """Volledige rand van de uitstulpingen: onder de gebogen aanloop, boven rond."""
+    nv = list(onderrand()) + [(UITSTULP_D - ROND_TAB, 0.0)]
     for t in np.linspace(0, ROND_TAB, NR_ROND)[1:]:
         nv.append((UITSTULP_D - ROND_TAB + t,
                    ROND_TAB - np.sqrt(max(ROND_TAB**2 - t**2, 0.0))))
@@ -213,8 +240,7 @@ def maak_houder():
     # --- de ronde bak: afschuining onderaan, bovenrand helemaal rondgezet
     bak = wentel([
         (0.0, 0.0),
-        (R_BUI - AFSCH_ONDER, 0.0),
-        (R_BUI, AFSCH_ONDER),
+        *[(R_BUI - d, z) for z, d in onderrand()],
         (R_BUI, z_top - ROND_RAND),
         *boog(R_BUI - ROND_RAND, z_top - ROND_RAND, ROND_RAND, 0, 90),
         (0.0, z_top),
@@ -237,7 +263,7 @@ def maak_houder():
 
     # --- uitduwgat in de bodem, beide randen gebroken
     if DRUK_D > 0:
-        rd, br = DRUK_D/2, 0.8
+        rd, br = DRUK_D/2, 1.2
         romp = D(romp, wentel([
             (0.0, -1.0),
             (rd + br + 1.0, -1.0),
