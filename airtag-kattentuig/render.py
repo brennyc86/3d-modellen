@@ -38,7 +38,7 @@ def preview(bestand, delen, elev=24, azim=-58, titel=""):
 
 
 preview("preview_houder.png", [(houder, "#3f6d99", 1.0)], elev=30, azim=-54,
-        titel="Eén stuk — bak met lip, aan weerszijden een uitstulping met riemgat")
+        titel="Eén stuk — twee losse ogen en, aan een vrije kant, een dubbel oog")
 
 tag_ex = tag.copy(); tag_ex.apply_translation([0, 0, 12])
 preview("preview_inleggen.png",
@@ -75,6 +75,14 @@ snede(ax, houder, [0, 0, A.UITSTULP_D/2], [0, 0, 1], "#14425e", lw=1.8)
 snede(ax, houder, [0, 0, A.z_top - 0.9], [0, 0, 1], "#7fa8c9", lw=1.0)
 maatlijn(ax, A.GAT_X0, A.GAT_X1, A.GAT_B/2 + 1.5, f"{A.GAT_L:.0f} mm")
 maatlijn(ax, -A.TOT_L/2, A.TOT_L/2, -A.UITSTULP_B/2 - 5.5, f"totaal {A.TOT_L:.1f} mm")
+if A.DUBBEL_OOG:
+    k = A.OOG_KANT
+    ax.annotate("", xy=(A.GAT_B/2 + 2.5, k*A.OOG_Y1), xytext=(A.GAT_B/2 + 2.5, k*A.OOG_Y2),
+                arrowprops=dict(arrowstyle="<->", color="#b03030", lw=1.0))
+    ax.text(A.GAT_B/2 + 3.2, k*(A.OOG_Y1 + A.OOG_Y2)/2,
+            f"steg {A.RAND_MID} mm", color="#b03030", fontsize=8, va="center")
+    ax.text(0, k*(A.OOG_EIND + 3.5), "dubbel oog", color="#b03030",
+            fontsize=9, ha="center", va="center")
 ax.annotate("", xy=(-A.GAT_X0 - A.GAT_L/2, A.GAT_B/2), xytext=(-A.GAT_X0 - A.GAT_L/2, -A.GAT_B/2),
             arrowprops=dict(arrowstyle="<->", color="#b03030", lw=1.0))
 ax.text(-A.GAT_X0 - A.GAT_L/2 - 1.0, 0, f"{A.GAT_B:.0f} mm", color="#b03030",

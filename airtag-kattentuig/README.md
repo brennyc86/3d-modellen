@@ -1,17 +1,31 @@
 # AirTag-houder voor een kattentuigje — TPU
 
 Eén stuk, **geen support en nergens een brug**. Voor een B-merk tracker van
-**Ø35 × 8 mm**, met aan weerszijden een uitstulping met een gat van **15 × 8 mm**
-(8 mm zodat ook de sluitclip van het tuigje erdoorheen kan).
+**Ø35 × 8 mm**, met drie bevestigingspunten: aan weerszijden een los oog van
+**15 × 8 mm**, en aan een vrije kant een **dubbel oog** van twee keer dezelfde maat.
+(8 mm zodat ook de sluitclip van het tuigje erdoorheen kan.)
 
 ![houder](preview_houder.png)
 
 ## Hoe het in elkaar zit
 
 Een ronde bak waar de tag van bovenaf onder een rondlopende lip in wordt gedrukt.
-Aan weerszijden een platte uitstulping met een **rechtopstaand** gat: je weeft het
-tuigje er zelf doorheen en bepaalt zelf of de riem **onder** of **boven** de houder
-langs loopt.
+Alle gaten staan **rechtop**, dus er wordt nergens iets overbrugd, en je bepaalt zelf
+of de riem **onder** of **boven** de houder langs loopt.
+
+### Twee manieren om hem op het tuigje te zetten (v8)
+
+- **Over de twee losse ogen**, links en rechts. De riem loopt dan door beide, over de
+  volle 70 mm. Ligt strak, maar vraagt wel een recht stuk riem van 7 cm.
+- **Door het dubbele oog** aan de vrije kant. Twee openingen van 15 × 8 mm met een
+  steg van 3,5 mm ertussen: door de ene omhoog, om de steg heen, door de andere terug
+  omlaag — net als een tri-glide. Daarmee klem je de houder op een **kort stuk riem**,
+  op elke plek van het tuigje die je wilt, en hij blijft daar zitten.
+
+Het dubbele oog steekt 26 mm buiten de bak uit, dus de houder is over die kant
+67,4 mm breed geworden. Wordt dat te veel op de kat: de twee losse ogen kunnen weg
+door in `airtag_houder.py` de lus in `tabplattegrond()`/`riemgaten()` over te slaan,
+of zet `DUBBEL_OOG = False` als je juist het dubbele oog niet wilt.
 
 Onder in de bak zit een gat van Ø20 mm om de tag er weer uit te duwen. Loopt de riem
 onder de houder door, dan drukt die riem meteen tegen de achterkant van de tag.
@@ -86,14 +100,15 @@ overgangen. De lip zelf staat op 39° uit het lood.
 
 | | mm |
 |---|---|
-| totaal | 70,4 × 22,0, ronde bak Ø 41,4 |
+| totaal | 70,4 × 67,4, ronde bak Ø 41,4 |
 | hoogte | 15,48 |
 | dikte uitstulpingen | 4,4 |
-| riemgaten | 15 × 8, hoeken r1,5 |
+| riemgaten | 4 × (15 × 8), hoeken r1,5 |
+| steg in het dubbele oog | 3,5 |
 | tagholte | Ø 35,4 × 8,15 |
 | nauwste opening onder de lip | Ø 31,0 |
 | lip | 2,2 mm overstek onder 39° |
-| gewicht | ~8,4 cm³, geprint ongeveer 6–8 g |
+| gewicht | ~9,9 cm³, geprint ongeveer 7–9 g |
 
 ## Printen (TPU)
 
@@ -125,6 +140,7 @@ draaien geeft een nieuwe STL.
 | `UITSTULP_B` / `UITSTULP_D` | uitstulping breed / dik | 22 / 4,4 |
 | `WAND` / `BODEM` | wand rond de tagholte / bodemdikte | 3,0 / 2,6 |
 | `DRUK_D` | uitduwgat in de bodem (0 = dicht) | 20 |
+| `DUBBEL_OOG` / `OOG_KANT` / `RAND_MID` | dubbel oog aan/uit, welke kant, steg | True / +Y / 3,5 |
 
 **Bak nog ronder?** `AFSCH_BAK` omhoog en `ROND_BAK` mee (maximaal 3,41 × `AFSCH_BAK`,
 anders start laag 1 steiler dan 45°). Kijk daarna naar de regel *wanddikte rond de

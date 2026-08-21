@@ -30,6 +30,7 @@ import numpy as np
 import trimesh
 import shapely
 from shapely.geometry import box as sbox, Point, Polygon
+from shapely.ops import unary_union
 
 ENGINE = "manifold"
 
@@ -85,11 +86,24 @@ RAND_BUI   = 4.0    # materiaal tussen het gat en het uiteinde
 EIND_R     = 5.0    # afronding van de hoeken van de uitstulping
 FILET      = 3.0    # afronding waar de uitstulping in de bak overgaat
 
+# --- dubbel oog aan een van de twee vrije kanten -----------------------------
+# Twee openingen van dezelfde maat, met een steg ertussen. De riem gaat door de
+# ene omhoog en door de andere terug omlaag, om de steg heen -- zoals een
+# tri-glide. Daarmee klem je de houder op een kort stuk riem in plaats van dat
+# hij een rechte baan van 70 mm nodig heeft tussen de twee losse ogen.
+DUBBEL_OOG = True
+OOG_KANT   = 1      # 1 = aan de +Y kant, -1 = aan de -Y kant
+RAND_MID   = 3.5    # steg tussen de twee openingen (daar loopt de riem omheen)
+
 DRUK_D     = 20.0   # gat in de bodem om de tag eruit te duwen (0 = dicht)
 
-QS   = 128          # segmenten in de ronde delen
-NB   = 14           # punten per afronding
-NR_ROND = 10        # facetten per afronding in de rand van de uitstulpingen
+# Meshfijnheid. Ruimer dan dit is verspilling: bij QS=80 is de koordafwijking op
+# Ø41 nog geen 0,02 mm, ver onder wat een printer kan. Grover scheelt vooral in
+# bestandsgrootte -- en GitHub weigert grote STL's te tonen.
+QS   = 64           # segmenten in de ronde delen
+NB   = 8            # punten per afronding in een omwentelingsprofiel
+NR_ROND = 7         # facetten per afronding in de rand van de uitstulpingen
+STAP = 2.0          # afstand tussen de punten op een gelofte rand (mm)
 
 # ============================================================
 #  AFGELEIDE MATEN
@@ -109,9 +123,15 @@ _T_z    = _A_z + (_A_r - _T_r)/LIP_HELLING
 z_top   = _T_z + ROND_TIP*(1 + np.sin(ALFA))           # bovenrand van de bak
 _C2_r   = R_LIP + ROND_TIP                             # hart van de tip-afronding
 
-GAT_X0  = R_BUI + RAND_BIN             # 22.60  binnenkant gat
-GAT_X1  = GAT_X0 + GAT_L               # 30.60  buitenkant gat
-TOT_L   = 2*(GAT_X1 + RAND_BUI)        # 69.20  totale lengte
+GAT_X0  = R_BUI + RAND_BIN             # binnenkant gat
+GAT_X1  = GAT_X0 + GAT_L               # buitenkant gat
+TOT_L   = 2*(GAT_X1 + RAND_BUI)        # totale lengte over de twee losse ogen
+
+OOG_Y0  = R_BUI + RAND_BIN             # dubbel oog: binnenkant eerste opening
+OOG_Y1  = OOG_Y0 + GAT_L
+OOG_Y2  = OOG_Y1 + RAND_MID            # steg
+OOG_Y3  = OOG_Y2 + GAT_L
+OOG_EIND = OOG_Y3 + RAND_BUI           # uiteinde van het dubbele oog
 
 
 # ============================================================
@@ -148,7 +168,8 @@ def uitpers(poly, za, zb):
 def _ringen(poly):
     """Buitenrand + gaten van een polygoon, altijd in dezelfde volgorde."""
     p = shapely.geometry.polygon.orient(poly, 1.0)
-    binnen = sorted(p.interiors, key=lambda r: r.centroid.x)
+    binnen = sorted(p.interiors, key=lambda r: (round(r.centroid.x, 3),
+                                               round(r.centroid.y, 3)))
     return [p.exterior] + list(binnen)
 
 
@@ -178,9 +199,10 @@ def gelofte(buiten, gaten, prof_buiten, prof_gaten):
         p = buiten.buffer(-d_b, join_style=1) if d_b > 1e-9 else buiten
         return p.difference(gaten.buffer(d_g, join_style=1) if d_g > 1e-9 else gaten)
 
-    hoogtes = np.unique(np.round(np.r_[prof_buiten[:, 0], prof_gaten[:, 0]], 6))
+    ruw = np.unique(np.round(np.r_[prof_buiten[:, 0], prof_gaten[:, 0]], 6))
+    hoogtes = ruw[np.r_[True, np.diff(ruw) > 0.12]]      # te dicht op elkaar = zonde
     basis = _ringen(vlak(hoogtes[len(hoogtes)//2]))
-    n_pt = [max(64, int(np.ceil(r.length/0.7))) for r in basis]
+    n_pt = [max(48, int(np.ceil(r.length/STAP))) for r in basis]
     anker = [_bemonster(r, n) for r, n in zip(basis, n_pt)]
 
     lagen = []
@@ -226,17 +248,26 @@ def tabplattegrond():
         eind = teken * (GAT_X1 + RAND_BUI)
         lip = sbox(min(0, eind), -UITSTULP_B/2, max(0, eind), UITSTULP_B/2)
         vorm = vorm.union(lip.buffer(-EIND_R).buffer(EIND_R, join_style=1))
+    if DUBBEL_OOG:
+        eind = OOG_KANT * OOG_EIND
+        lip = sbox(-UITSTULP_B/2, min(0, eind), UITSTULP_B/2, max(0, eind))
+        vorm = vorm.union(lip.buffer(-EIND_R).buffer(EIND_R, join_style=1))
     return vorm.buffer(FILET, join_style=1).buffer(-FILET, join_style=1)
 
 
+def _rond_gat(x0, y0, x1, y1):
+    return sbox(min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1)) \
+             .buffer(-GAT_R).buffer(GAT_R, join_style=1)
+
+
 def riemgaten():
-    """De twee rechtopstaande riemgaten, als 2D-vorm."""
-    g = []
-    for teken in (1, -1):
-        r = sbox(min(teken*GAT_X0, teken*GAT_X1), -GAT_B/2,
-                 max(teken*GAT_X0, teken*GAT_X1), GAT_B/2)
-        g.append(r.buffer(-GAT_R).buffer(GAT_R, join_style=1))
-    return g[0].union(g[1])
+    """Alle rechtopstaande riemgaten, als 2D-vorm."""
+    g = [_rond_gat(t*GAT_X0, -GAT_B/2, t*GAT_X1, GAT_B/2) for t in (1, -1)]
+    if DUBBEL_OOG:
+        k = OOG_KANT
+        g += [_rond_gat(-GAT_B/2, k*OOG_Y0, GAT_B/2, k*OOG_Y1),
+              _rond_gat(-GAT_B/2, k*OOG_Y2, GAT_B/2, k*OOG_Y3)]
+    return unary_union(g)
 
 
 def aanloop(inzet, radius):
@@ -370,6 +401,12 @@ if __name__ == "__main__":
           f"{np.degrees(ALFA):.0f}° uit het lood")
     print(f"  afrondingen: buitenrand r{ROND_RAND}, liponder r{ROND_LIP}, "
           f"liptip r{ROND_TIP}, uitstulping r{ROND_TAB}, bedzijde 45° x {AFSCH_ONDER}")
+    print(f"  riemgaten {GAT_L:.0f} x {GAT_B:.0f} mm, rechtop door een uitstulping "
+          f"van {UITSTULP_D} mm dik")
+    if DUBBEL_OOG:
+        print(f"  dubbel oog aan de {'+Y' if OOG_KANT > 0 else '-Y'} kant: 2 openingen "
+              f"met een steg van {RAND_MID} mm ertussen, steekt "
+              f"{OOG_EIND - R_BUI:.1f} mm buiten de bak uit")
     dun, z_dun = wanddikte_rapport()
     print(f"  wanddikte rond de tagholte: minimaal {dun:.2f} mm (op z={z_dun:.1f}) "
           f"-> {'ruim genoeg' if dun >= 1.6 else 'TE DUN'}")
