@@ -1,29 +1,28 @@
 # Kangoo-haakje (sierverlichting)
 
-Haakje voor lichtsnoeren dat je **direct in de schroefdraadgaten** (vliegtuigboxen) van de
-Renault Kangoo draait. Alleen voor lichte belasting; trekkracht schuin op de stift breekt hem.
-De draadmaat van de gaten is niet bevestigd, dus er is een set. Probeer welke bout soepel
-indraait en print die maat.
+Haakje voor lichtsnoeren met een **gladde pen met een kleine ribbel**, die je in de
+schroefdraadgaten (vliegtuigboxen) van de Renault Kangoo duwt. Er komt geen draad aan het
+haakje, dus de draad in de auto blijft heel voor de echte koffers. Alleen voor lichte
+belasting (sierverlichting). De draadmaat van de gaten is niet bevestigd, dus er is een set.
 
-## Haakje met eigen draad (hoofdversie)
+| Bestand | Voor draad | Pen ⌀ | Ribbel ⌀ | Penlengte |
+|---|---|---|---|---|
+| `kangoo_haakje_pen_M3.stl` | M3 | 2,26 | 2,73 | 12 mm |
+| `kangoo_haakje_pen_M4.stl` | M4 | 3,04 | 3,62 | 12 mm |
+| `kangoo_haakje_pen_M5.stl` | M5 | 3,93 | 4,57 | 12 mm |
+| `kangoo_haakje_pen_M6.stl` | M6 | 4,72 | 5,46 | 12 mm |
+| `kangoo_haakje_pen_M8.stl` | M8 | 6,45 | 7,32 | 12 mm |
 
-| Bestand | Draad | Spoed | Stiftlengte |
-|---|---|---|---|
-| `kangoo_haakje_draad_M3.stl` | M3 | 0,5 | 12 mm |
-| `kangoo_haakje_draad_M4.stl` | M4 | 0,7 | 12 mm |
-| `kangoo_haakje_draad_M5.stl` | M5 | 0,8 | 12 mm |
-| `kangoo_haakje_draad_M6.stl` | M6 | 1,0 | 12 mm |
-| `kangoo_haakje_draad_M8.stl` | M8 | 1,25 | 12 mm |
+- Pen = kerndiameter van het draad min 0,2 mm; de ribbel steekt ~0,3–0,45 mm uit en haakt in de
+  draadgroef. Een gleuf (9 mm diep) in het uiteinde laat de pen meeveren bij het indrukken.
+- Zit hij te los: `RIBBEL` omhoog in `gen_pen.py` (0,5 → 0,65). Te strak: omlaag of `SPELING` omhoog.
+- **Printen:** haakje plat op het bed, pen omhoog, geen support (ribbel heeft 45°-flanken). PETG
+  (iets buigzaam, breekt minder dan PLA/ASA), 4 wanden, 100% infill in de pen als dat kan.
+- Indrukken met een lichte draaibeweging; eruit trekken kan zonder gereedschap.
 
-- ISO-grof draad, rechtsdraaiend, stift 0,25 mm onder nominaal (printspeling). Zit hij te los
-  of te strak: `SPELING` in `gen_draad.py` aanpassen (±0,1) en opnieuw draaien.
-- **Printen:** haakje plat op het bed, stift omhoog, geen support. PETG/ASA (PLA wordt zacht in
-  een warme auto). 4 wanden, 40% infill; kleine draad (M3/M4) print grof, een 0,2 mm laag helpt.
-- Draai alleen handvast aan. Een geprint draad schuift niet op moment dat het strak staat, en breekt dan.
+## Alternatief: losse bout
 
-## Haakje met losse bout (alternatief)
+`kangoo_haakje_M5/M6/M8/M10.stl`: gat voor een bout met cilinderkop door het midden (`gen.py`).
+Veel sterker, maar vergt een bout.
 
-`kangoo_haakje_M5/M6/M8/M10.stl`: gat voor een bout met cilinderkop door het midden. Veel
-sterker, maar je hebt een bout nodig (`gen.py`).
-
-Maten aanpassen: bovenin het script, daarna `python3 gen_draad.py` / `python3 gen.py`.
+Maten aanpassen: bovenin het script, daarna `python3 gen_pen.py` / `python3 gen.py`.
